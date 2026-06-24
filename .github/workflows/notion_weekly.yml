@@ -1,0 +1,61 @@
+name: Weekly Notion Report
+
+on:
+  schedule:
+    - cron: "0 18 * * 6"   # 매주 토요일 18:00 UTC (한국 일요일 03:00)
+  workflow_dispatch:         # 수동 실행 가능
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 주간 커밋 요약 추출
+        id: summary
+        run: |
+          SINCE=$(date -d "7 days ago" +%Y-%m-%d)
+          LOG=$(git log --since="$SINCE" --pretty="%an | %s" --no-merges | head -30)
+          COUNT=$(git log --since="$SINCE" --oneline --no-merges | wc -l)
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+          {
+            echo "log<<LOGEOF"
+            echo "$LOG"
+            echo "LOGEOF"
+          } >> $GITHUB_OUTPUT
+
+      - name: Notion 주간 리포트 기록
+        env:
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_PAGE_ID: ${{ secrets.NOTION_WEEKLY_PAGE_ID }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, urllib.request
+          from datetime import datetime
+
+          api_key = os.environ["NOTION_API_KEY"]
+          page_id = os.environ["NOTION_PAGE_ID"]
+          count = "${{ steps.summary.outputs.count }}"
+          log = """${{ steps.summary.outputs.log }}"""
+          week_str = datetime.now().strftime("%Y년 %m월 %d일 주간 리포트")
+
+          blocks = [
+              {"type": "heading_2", "heading_2": {
+                  "rich_text": [{"type": "text", "text": {"content": week_str}}]}},
+              {"type": "paragraph", "paragraph": {
+                  "rich_text": [{"type": "text", "text": {
+                      "content": f"총 커밋: {count}건\n\n" + log}}]}}
+          ]
+          payload = json.dumps({"children": blocks}).encode()
+          req = urllib.request.Request(
+              f"https://api.notion.com/v1/blocks/{page_id}/children",
+              data=payload,
+              headers={"Authorization": f"Bearer {api_key}",
+                       "Content-Type": "application/json",
+                       "Notion-Version": "2022-06-28"},
+              method="PATCH")
+          urllib.request.urlopen(req)
+          print("✓ Notion 주간 리포트 기록 완료")
+          EOF

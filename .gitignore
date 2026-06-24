@@ -1,0 +1,61 @@
+# =====================
+# 🔐 보안 — 절대 올리면 안 됨
+# =====================
+.env
+.env.local
+.env.*.local
+.env.production
+secrets.yaml
+*.pem
+*.key
+*.p12
+google-credentials.json
+
+# =====================
+# Python / FastAPI
+# =====================
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.ruff_cache/
+*.log
+*.sqlite3
+*.db
+
+# =====================
+# Node.js / Next.js
+# =====================
+node_modules/
+.next/
+out/
+.turbo/
+npm-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+
+# =====================
+# Claude Code
+# =====================
+.claude/cache/
+.claude/checkpoints/
+
+# =====================
+# OS / 에디터
+# =====================
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+*.swp
+
+# =====================
+# 데이터 / 용량 큰 파일
+# =====================
+data/raw/
+data/cache/

@@ -148,6 +148,6 @@ antshell/
 
 ## 🔗 링크
 
-- [Notion 스터디 페이지](https://notion.so)
+- [Notion 스터디 페이지](https://www.notion.so/38ab326d0fb280ddb02bd6b7009e4c2c)
 - [개발 원칙](DEV_PRINCIPLES.md)
 - [온보딩 상세 가이드](docs/setup/ONBOARDING.md)

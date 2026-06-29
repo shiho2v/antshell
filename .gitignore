@@ -59,6 +59,7 @@ Thumbs.db
 # =====================
 docs/weekly/*.local.md
 docs/weekly/*.slides.md
+docs/weekly/*.slides.html
 docs/weekly/*.demo.md
 
 # =====================

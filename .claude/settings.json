@@ -9,6 +9,16 @@
             "command": "python3 .claude/hooks/notion_sync.py"
           }
         ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/auto_header.py",
+            "statusMessage": "헤더 주석 자동 삽입 중..."
+          }
+        ]
       }
     ],
     "PreToolUse": [

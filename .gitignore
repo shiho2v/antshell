@@ -55,6 +55,13 @@ Thumbs.db
 *.swp
 
 # =====================
+# 개인 로컬 문서 (발표자료, 메모)
+# =====================
+docs/weekly/*.local.md
+docs/weekly/*.slides.md
+docs/weekly/*.demo.md
+
+# =====================
 # 데이터 / 용량 큰 파일
 # =====================
 data/raw/

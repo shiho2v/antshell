@@ -27,7 +27,7 @@ def get_git_user() -> str:
     """
     try:
         return subprocess.check_output(
-            ['git', 'config', 'user.name'], text=True
+            ['git', 'config', 'user.name'], encoding='utf-8'
         ).strip()
     except Exception:
         return 'unknown'

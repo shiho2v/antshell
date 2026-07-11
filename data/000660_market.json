@@ -1,0 +1,17 @@
+{
+  "stock_code": "000660",
+  "as_of": "2026-07-10",
+  "fetched_date": "2026-07-11",
+  "source": "pykrx",
+  "current_price": 2180000,
+  "high_52w": 2987000,
+  "pct_from_52w_high": -27.02,
+  "last_volume": 4819564,
+  "avg_volume_60d": 5480860,
+  "volume_ratio_vs_60d": 0.879,
+  "inst_net_60d": 6917948799160,
+  "foreign_net_60d": -48042640967160,
+  "inst_foreign_net_60d": -41124692168000,
+  "supply_note": null,
+  "trading_days_used": 268
+}

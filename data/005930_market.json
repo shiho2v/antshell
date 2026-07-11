@@ -1,0 +1,17 @@
+{
+  "stock_code": "005930",
+  "as_of": "2026-07-10",
+  "fetched_date": "2026-07-11",
+  "source": "pykrx",
+  "current_price": 285000,
+  "high_52w": 374500,
+  "pct_from_52w_high": -23.9,
+  "last_volume": 19919725,
+  "avg_volume_60d": 30627975,
+  "volume_ratio_vs_60d": 0.65,
+  "inst_net_60d": 12750742382460,
+  "foreign_net_60d": -43264039686210,
+  "inst_foreign_net_60d": -30513297303750,
+  "supply_note": null,
+  "trading_days_used": 268
+}

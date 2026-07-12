@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "module-result.schema.json",
+  "title": "Module Result",
+  "description": "모듈 1개의 분석 결과. score(기업 평가) / confidence(판단 신뢰도) / evidence_coverage(데이터 확보율)를 엄격히 구분한다. 데이터가 부족하면 낮은 점수를 주지 말고 score=null + 낮은 confidence 로 처리한다.",
+  "type": "object",
+  "required": [
+    "module",
+    "status",
+    "score",
+    "max_score",
+    "confidence",
+    "evidence_coverage",
+    "evidence_ids",
+    "validation"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "module": {
+      "type": "string",
+      "enum": ["business", "quality", "growth", "moat", "valuation", "trend", "risk", "catalyst"]
+    },
+    "ticker": {"type": "string", "pattern": "^[0-9]{6}$"},
+    "status": {
+      "type": "string",
+      "enum": ["completed", "partial", "insufficient_data", "skipped", "failed"],
+      "description": "insufficient_data = 데이터 부족으로 채점 불가. **낮은 점수가 아니다.**"
+    },
+    "score": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 100,
+      "description": "**기업 평가.** score_modules.py 가 계산한다. Claude가 산술하지 않는다. 채점 가능한 criterion 이 없으면 null."
+    },
+    "max_score": {"type": "number", "const": 100},
+    "confidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "**판단의 신뢰도.** 점수와 독립적이다. 데이터가 적거나 상충 근거가 많으면 낮아진다."
+    },
+    "evidence_coverage": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "**필요 데이터 확보율** = 채점된 criterion 수 / 전체 criterion 수."
+    },
+    "verdict": {
+      "type": ["string", "null"],
+      "description": "500단어 이내의 모듈 서술. 매수/매도 표현 금지."
+    },
+    "criteria_scores": {
+      "type": "array",
+      "description": "criterion 단위 채점 내역. registry 의 id 와 1:1 대응. 재현 검증(Gate 3)의 대상.",
+      "items": {
+        "type": "object",
+        "required": ["criterion_id", "level", "weight"],
+        "additionalProperties": false,
+        "properties": {
+          "criterion_id": {"type": "string"},
+          "name": {"type": "string"},
+          "type": {"type": "string", "enum": ["auto", "judged"]},
+          "level": {
+            "type": ["integer", "null"],
+            "minimum": 0,
+            "maximum": 3,
+            "description": "null = N/A. **N/A 에 점수를 부여하지 않는다.** 0(최하 등급)과 명확히 구분된다."
+          },
+          "weight": {"type": "number"},
+          "metric": {"type": ["string", "null"]},
+          "metric_value": {"type": ["number", "null"]},
+          "na_reason": {
+            "type": ["string", "null"],
+            "description": "level=null 일 때 필수. 예: '자격증명 없음(KRX_ID)', '적자기업 PER 제외', '인접 분기 보고서 결측'"
+          },
+          "evidence_ids": {"type": "array", "items": {"type": "string"}},
+          "rationale": {"type": ["string", "null"], "description": "judged 일 때 Claude의 근거 서술"}
+        }
+      }
+    },
+    "strengths": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["point", "evidence_ids"],
+        "properties": {
+          "point": {"type": "string"},
+          "evidence_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+        }
+      }
+    },
+    "weaknesses": {
+      "type": "array",
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": ["point", "evidence_ids"],
+        "properties": {
+          "point": {"type": "string"},
+          "evidence_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+        }
+      }
+    },
+    "counter_evidence": {
+      "type": "array",
+      "description": "결론과 상충하는 근거. **숨기지 않는다.**",
+      "items": {
+        "type": "object",
+        "required": ["point", "evidence_ids"],
+        "properties": {
+          "point": {"type": "string"},
+          "evidence_ids": {"type": "array", "items": {"type": "string"}, "minItems": 1}
+        }
+      }
+    },
+    "unknowns": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "확인이 필요하나 확인하지 못한 것. 추정으로 대체하지 않는다."
+    },
+    "invalidating_conditions": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "이 모듈의 판단을 뒤집을 조건."
+    },
+    "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "validation": {
+      "type": "string",
+      "enum": ["pending", "passed", "failed"]
+    },
+    "validation_errors": {"type": "array", "items": {"type": "string"}},
+    "computed_at": {"type": "string"}
+  }
+}

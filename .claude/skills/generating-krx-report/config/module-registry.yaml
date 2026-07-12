@@ -1,0 +1,443 @@
+# module-registry.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# 채점 기준의 **단일 진실 원천(single source of truth)**.
+#
+#   - score_modules.py 가 이 파일만 읽어 점수를 계산한다.
+#   - modules/*/rubric.md 는 이 기준을 사람/Claude가 읽도록 서술한 문서일 뿐,
+#     점수 산정에 사용되지 않는다. 불일치 시 **이 파일이 이긴다**.
+#   - validate_report.py 가 이 파일로 점수를 재계산해 보고서와 대조한다.
+#
+# criterion.type
+#   auto   : Python이 metrics.json 값 + bands 로 자동 채점. Claude 개입 없음.
+#   judged : Claude가 rubric을 읽고 **서수 등급(level)과 evidence_id만** 제출.
+#            산술은 하지 않는다. 점수 환산은 score_modules.py가 수행.
+#
+# bands (type: auto)
+#   direction: higher_better | lower_better
+#   각 밴드는 [min, max) 구간이며 level 을 부여한다. null = 무한대.
+#   metric 값이 없으면(N/A) 해당 criterion 은 채점 제외 — **0점이 아니다**.
+#
+# level 은 모두 0..3 (max_level). 모듈 점수는:
+#   score = Σ(weight_i × level_i / 3) / Σ(weight_i for 채점된 i) × 100
+#   → N/A criterion 은 분자·분모 모두에서 제외 (Gate 3: "N/A 항목에 점수 금지")
+# ─────────────────────────────────────────────────────────────────────────────
+
+max_level: 3
+
+modules:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  business:
+    title: 사업구조
+    kind: qualitative
+    summary_variant: business-summary   # 축약 실행 시 사용
+    criteria:
+      - id: BUS-01
+        name: 사업모델 명료성
+        type: judged
+        weight: 20
+        requires_evidence: 1
+      - id: BUS-02
+        name: 매출구조 이해도
+        type: judged
+        weight: 20
+        requires_evidence: 1
+      - id: BUS-03
+        name: 집중도 위험 (제품·고객·지역)
+        type: judged
+        weight: 20
+        requires_evidence: 1
+        inverse: true          # 등급이 높을수록 "집중도 위험이 낮음"
+      - id: BUS-04
+        name: 자본집약도와 고정비 구조
+        type: judged
+        weight: 20
+        requires_evidence: 1
+      - id: BUS-05
+        name: 실적 변동성의 원천 규명
+        type: judged
+        weight: 20
+        requires_evidence: 1
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  quality:
+    title: 기업 품질
+    kind: quantitative
+    criteria:
+      - id: QUA-01
+        name: 영업이익률 (TTM)
+        type: auto
+        weight: 18
+        metric: operating_margin_ttm
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 3, 0], [3, 8, 1], [8, 15, 2], [15, null, 3]]
+      - id: QUA-02
+        name: ROE (TTM)
+        type: auto
+        weight: 18
+        metric: roe_ttm
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 5, 0], [5, 10, 1], [10, 15, 2], [15, null, 3]]
+      - id: QUA-03
+        name: 현금전환율 (영업현금흐름 / 당기순이익)
+        type: auto
+        weight: 18
+        metric: cash_conversion_ttm
+        unit: "x"
+        direction: higher_better
+        bands: [[null, 0.5, 0], [0.5, 0.8, 1], [0.8, 1.1, 2], [1.1, null, 3]]
+      - id: QUA-04
+        name: 잉여현금흐름 마진
+        type: auto
+        weight: 16
+        metric: fcf_margin_ttm
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 0, 0], [0, 3, 1], [3, 8, 2], [8, null, 3]]
+      - id: QUA-05
+        name: 재무 레버리지 (순차입금 / 자기자본)
+        type: auto
+        weight: 15
+        metric: net_debt_to_equity
+        unit: "x"
+        direction: lower_better
+        bands: [[null, 0.0, 3], [0.0, 0.5, 2], [0.5, 1.0, 1], [1.0, null, 0]]
+      - id: QUA-06
+        name: 주식 희석 (1년 발행주식수 증가율)
+        type: auto
+        weight: 15
+        metric: share_change_1y
+        unit: "%"
+        direction: lower_better
+        bands: [[null, 0.5, 3], [0.5, 2.0, 2], [2.0, 5.0, 1], [5.0, null, 0]]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  growth:
+    title: 성장성
+    kind: quantitative
+    summary_variant: growth-summary
+    criteria:
+      - id: GRO-01
+        name: 최근 분기 매출 YoY (분기 단독)
+        type: auto
+        weight: 18
+        metric: rev_yoy_q
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 0, 0], [0, 10, 1], [10, 25, 2], [25, null, 3]]
+      - id: GRO-02
+        name: 최근 분기 영업이익 YoY (분기 단독)
+        type: auto
+        weight: 20
+        metric: op_yoy_q
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 0, 0], [0, 15, 1], [15, 40, 2], [40, null, 3]]
+      - id: GRO-03
+        name: 최근 분기 EPS YoY
+        type: auto
+        weight: 18
+        metric: eps_yoy_q
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 0, 0], [0, 15, 1], [15, 40, 2], [40, null, 3]]
+      - id: GRO-04
+        name: 3년 매출 CAGR
+        type: auto
+        weight: 15
+        metric: rev_cagr_3y
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 0, 0], [0, 5, 1], [5, 12, 2], [12, null, 3]]
+      - id: GRO-05
+        name: 3년 영업이익 CAGR
+        type: auto
+        weight: 15
+        metric: op_cagr_3y
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 0, 0], [0, 8, 1], [8, 18, 2], [18, null, 3]]
+      - id: GRO-06
+        name: 성장 가속도 (직전 분기 대비 매출 YoY 변화)
+        type: auto
+        weight: 7
+        metric: growth_acceleration_pp
+        unit: "%p"
+        direction: higher_better
+        bands: [[null, -5, 0], [-5, 0, 1], [0, 5, 2], [5, null, 3]]
+      - id: GRO-07
+        name: 수익성 동반 성장 (영업이익 YoY − 매출 YoY)
+        type: auto
+        weight: 7
+        metric: profitable_growth_gap_pp
+        unit: "%p"
+        direction: higher_better
+        bands: [[null, -5, 0], [-5, 0, 1], [0, 10, 2], [10, null, 3]]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  moat:
+    title: 경쟁우위
+    kind: qualitative
+    criteria:
+      - id: MOA-01
+        name: 기술·품질·인증 장벽
+        type: judged
+        weight: 20
+        requires_evidence: 2
+        distinct_evidence_types: true   # 서로 다른 종류의 근거 2개 이상
+      - id: MOA-02
+        name: 원가우위와 규모의 경제
+        type: judged
+        weight: 20
+        requires_evidence: 2
+        distinct_evidence_types: true
+      - id: MOA-03
+        name: 고객 전환비용과 공급망 지위
+        type: judged
+        weight: 20
+        requires_evidence: 2
+        distinct_evidence_types: true
+      - id: MOA-04
+        name: 연구개발·특허 축적
+        type: judged
+        weight: 15
+        requires_evidence: 1
+      - id: MOA-05
+        name: 수익성 지속성 (해자의 재무적 발현)
+        type: judged
+        weight: 25
+        requires_evidence: 2
+        hint_metrics: [operating_margin_ttm, roe_ttm, operating_margin_history]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  valuation:
+    title: 밸류에이션
+    kind: quantitative
+    criteria:
+      - id: VAL-01
+        name: Trailing PER
+        type: auto
+        weight: 22
+        metric: per_trailing
+        unit: "x"
+        direction: lower_better
+        na_if_negative_earnings: true    # 적자기업 PER 금지 (Gate 3)
+        bands: [[null, 8, 3], [8, 15, 2], [15, 25, 1], [25, null, 0]]
+      - id: VAL-02
+        name: PBR (ROE 대비 해석)
+        type: auto
+        weight: 18
+        metric: pbr
+        unit: "x"
+        direction: lower_better
+        bands: [[null, 0.8, 3], [0.8, 1.5, 2], [1.5, 3.0, 1], [3.0, null, 0]]
+      - id: VAL-03
+        name: EV/EBITDA
+        type: auto
+        weight: 20
+        metric: ev_ebitda
+        unit: "x"
+        direction: lower_better
+        na_if_negative_earnings: true
+        bands: [[null, 5, 3], [5, 9, 2], [9, 14, 1], [14, null, 0]]
+      - id: VAL-04
+        name: Earnings Yield
+        type: auto
+        weight: 15
+        metric: earnings_yield
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 3, 0], [3, 6, 1], [6, 10, 2], [10, null, 3]]
+      - id: VAL-05
+        name: FCF Yield
+        type: auto
+        weight: 15
+        metric: fcf_yield
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 0, 0], [0, 3, 1], [3, 6, 2], [6, null, 3]]
+      - id: VAL-06
+        name: PSR (영업이익률 대비 해석)
+        type: auto
+        weight: 10
+        metric: psr
+        unit: "x"
+        direction: lower_better
+        bands: [[null, 0.5, 3], [0.5, 1.5, 2], [1.5, 3.0, 1], [3.0, null, 0]]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  trend:
+    title: 주가 추세와 CANSLIM
+    kind: quantitative
+    rubric_file: canslim-rubric.md
+    criteria:
+      - id: TRD-C
+        name: "C — 최근 분기 실적 (growth 모듈 재사용)"
+        type: auto
+        weight: 15
+        metric: eps_yoy_q
+        reuse_from: growth              # 재계산 금지. GRO-03 evidence 재참조
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 0, 0], [0, 15, 1], [15, 25, 2], [25, null, 3]]
+      - id: TRD-A
+        name: "A — 연간 이익 성장 (growth 모듈 재사용)"
+        type: auto
+        weight: 15
+        metric: op_cagr_3y
+        reuse_from: growth              # GRO-05 evidence 재참조
+        unit: "%"
+        direction: higher_better
+        bands: [[null, 0, 0], [0, 10, 1], [10, 20, 2], [20, null, 3]]
+      - id: TRD-N
+        name: "N — 신제품·신경영·신고가"
+        type: auto
+        weight: 15
+        metric: pct_from_52w_high
+        unit: "%"
+        direction: higher_better        # 0에 가까울수록(=신고가 근접) 높음. 음수 폭이 클수록 낮음
+        bands: [[null, -25, 0], [-25, -15, 1], [-15, -5, 2], [-5, null, 3]]
+      - id: TRD-S
+        name: "S — 수급 (거래량 급증)"
+        type: auto
+        weight: 12
+        metric: volume_ratio_vs_60d
+        unit: "x"
+        direction: higher_better
+        bands: [[null, 0.8, 0], [0.8, 1.2, 1], [1.2, 1.8, 2], [1.8, null, 3]]
+      - id: TRD-L
+        name: "L — 주도주 여부 (지수 대비 상대강도 6개월)"
+        type: auto
+        weight: 15
+        metric: rs_vs_index_6m_pp
+        unit: "%p"
+        direction: higher_better
+        requires_credentials: [KRX_ID, KRX_PW]   # 지수 필요 → 없으면 N/A
+        bands: [[null, -10, 0], [-10, 0, 1], [0, 15, 2], [15, null, 3]]
+      - id: TRD-I
+        name: "I — 기관·외국인 순매수 (60일)"
+        type: auto
+        weight: 13
+        metric: inst_foreign_net_60d_to_mktcap
+        unit: "%"
+        direction: higher_better
+        requires_credentials: [KRX_ID, KRX_PW]
+        bands: [[null, -0.5, 0], [-0.5, 0, 1], [0, 1.0, 2], [1.0, null, 3]]
+      - id: TRD-M
+        name: "M — 시장 방향 (지수 200일선 대비)"
+        type: auto
+        weight: 15
+        metric: index_vs_ma200_pct
+        unit: "%"
+        direction: higher_better
+        requires_credentials: [KRX_ID, KRX_PW]
+        bands: [[null, -5, 0], [-5, 0, 1], [0, 5, 2], [5, null, 3]]
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  risk:
+    title: 위험
+    kind: qualitative
+    summary_variant: risk-summary
+    inverse_scale: true    # 점수가 높을수록 위험이 낮음(= 기업 평가에 긍정)
+    criteria:
+      - id: RSK-01
+        name: 사업·산업 사이클 위험
+        type: judged
+        weight: 18
+        requires_evidence: 1
+      - id: RSK-02
+        name: 고객·공급망 집중 위험
+        type: judged
+        weight: 16
+        requires_evidence: 1
+      - id: RSK-03
+        name: 재무·유동성 위험
+        type: judged
+        weight: 18
+        requires_evidence: 1
+        hint_metrics: [net_debt_to_equity, interest_coverage, current_ratio]
+      - id: RSK-04
+        name: 회계·일회성 항목 위험
+        type: judged
+        weight: 12
+        requires_evidence: 1
+      - id: RSK-05
+        name: 설비투자·희석 위험
+        type: judged
+        weight: 12
+        requires_evidence: 1
+        hint_metrics: [capex_to_ocf, share_change_1y]
+      - id: RSK-06
+        name: 밸류에이션·수급 위험
+        type: judged
+        weight: 12
+        requires_evidence: 1
+      - id: RSK-07
+        name: 규제·환율·원자재 위험
+        type: judged
+        weight: 12
+        requires_evidence: 1
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  catalyst:
+    title: 촉매
+    kind: qualitative
+    criteria:
+      - id: CAT-01
+        name: 공시로 확인된 촉매의 존재
+        type: judged
+        weight: 35
+        requires_evidence: 1
+        note: 공시 근거 없는 촉매는 등재 자체가 금지된다.
+      - id: CAT-02
+        name: 재무적 연결 경로의 명확성
+        type: judged
+        weight: 30
+        requires_evidence: 1
+      - id: CAT-03
+        name: 시점의 구체성과 확인 지표 존재
+        type: judged
+        weight: 20
+        requires_evidence: 1
+      - id: CAT-04
+        name: 주가 선반영 여지
+        type: judged
+        weight: 15
+        requires_evidence: 1
+        inverse: true    # 이미 선반영되었을수록 낮은 등급
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 요청 유형 → 실행 모듈 (Phase 10)
+# full 모듈은 instructions.md + rubric.md 를 읽고 정식 채점한다.
+# summary 모듈은 지표만 인용하고 별도 채점하지 않는다(종합점수에서 제외).
+# ─────────────────────────────────────────────────────────────────────────────
+request_profiles:
+
+  comprehensive:
+    description: 종합 기업분석 — 8개 모듈 전부
+    full: [business, quality, growth, moat, valuation, trend, risk, catalyst]
+    summary: []
+    template: full-report.html
+
+  canslim:
+    description: CANSLIM 분석
+    full: [growth, trend]
+    summary: [business, risk]     # business-summary, risk-summary
+    template: compact-report.html
+    note: >
+      trend(CANSLIM)의 C·A는 growth 모듈 지표를 재사용하므로 growth는 의존성으로 반드시 실행된다.
+      종합점수는 실행된 모듈만으로, 해당 가중치를 재정규화하여 계산한다.
+
+  valuation:
+    description: 밸류에이션 분석
+    full: [quality, valuation]
+    summary: [business, growth, risk]
+    template: compact-report.html
+
+  update:
+    description: 업데이트 보고서 — 변경된 모듈만 재실행
+    full: []          # 런타임에 변경 감지로 결정
+    summary: []
+    template: update-report.html

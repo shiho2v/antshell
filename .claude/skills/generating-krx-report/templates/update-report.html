@@ -1,0 +1,228 @@
+<!doctype html>
+<!--
+  update-report.html — 업데이트 보고서 (이전 분석 대비 변경분만)
+  ─────────────────────────────────────────────────────────────────────────────
+  이전 data/{ticker}_manifest.json 과 비교해 **변경된 모듈만 재실행**한 결과를 담는다.
+  재실행하지 않은 모듈은 이전 값을 그대로 표시하되 "미변경(이전 분석 재사용)"으로 명시한다.
+
+  규칙:
+    - 변경 전/후 값을 나란히 보여주고, **변화량은 Python 이 계산한 값만** 인용한다.
+    - N/A → 값, 값 → N/A 전환도 변화로 표시한다 (0 으로 표기하지 않는다).
+    - 이전 보고서의 판단이 여전히 유효한지, 훼손 조건이 촉발됐는지 명시한다.
+    - 매수·매도 표현 금지. 목표주가·컨센서스 생성 금지.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>{{COMPANY_NAME}}({{TICKER}}) — 업데이트 보고서</title>
+<style>
+  :root{--fg:#1a1a1a;--mut:#6b7280;--line:#e5e7eb;--bg:#fff;--card:#f9fafb;
+        --up:#047857;--down:#b91c1c;--na:#9ca3af;--warn:#b45309;--accent:#1d4ed8}
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem;background:var(--bg);color:var(--fg);
+       font:16px/1.7 -apple-system,"Segoe UI","Malgun Gothic",sans-serif}
+  main{max-width:54rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  h2{font-size:1.15rem;margin:2rem 0 .7rem;padding-bottom:.35rem;border-bottom:2px solid var(--line)}
+  h3{font-size:1rem;margin:1.2rem 0 .4rem}
+  .sub{color:var(--mut);font-size:.88rem;margin-bottom:1.2rem}
+  .banner{background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;
+          padding:.75rem .9rem;font-size:.85rem;margin:1rem 0}
+  .delta-box{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);
+             border-radius:6px;padding:.75rem .9rem;font-size:.88rem;margin:1rem 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));gap:.7rem;margin:1rem 0}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.7rem}
+  .kpi .k{font-size:.72rem;color:var(--mut);text-transform:uppercase}
+  .kpi .v{font-size:1.25rem;font-weight:700;margin-top:.15rem}
+  .kpi .d{font-size:.78rem;margin-top:.15rem}
+  table{width:100%;border-collapse:collapse;margin:.9rem 0;font-size:.88rem}
+  th,td{border:1px solid var(--line);padding:.45rem .55rem;text-align:left;vertical-align:top}
+  th{background:var(--card);font-weight:600}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .up{color:var(--up);font-weight:600}
+  .down{color:var(--down);font-weight:600}
+  .same{color:var(--mut)}
+  .na{color:var(--na);font-style:italic}
+  .src{color:var(--mut);font-size:.76rem;white-space:nowrap}
+  .fact::before{content:"[사실] ";color:var(--accent);font-weight:600;font-size:.78rem}
+  .interp::before{content:"[해석] ";color:var(--warn);font-weight:600;font-size:.78rem}
+  .eid{font-family:ui-monospace,monospace;font-size:.7rem;color:var(--mut);
+       background:var(--card);border:1px solid var(--line);border-radius:4px;padding:0 .25rem}
+  .verdict{display:inline-block;padding:.3rem .8rem;border-radius:999px;font-weight:700;
+           background:var(--card);border:1px solid var(--line)}
+  .reused{background:repeating-linear-gradient(45deg,transparent,transparent 6px,
+           rgba(128,128,128,.06) 6px,rgba(128,128,128,.06) 12px)}
+  ul{margin:.35rem 0 .7rem;padding-left:1.2rem}
+  footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--line);
+         color:var(--mut);font-size:.8rem}
+  @media(prefers-color-scheme:dark){
+    :root{--fg:#e5e7eb;--mut:#9ca3af;--line:#374151;--bg:#111827;--card:#1f2937;
+          --up:#34d399;--down:#f87171;--na:#6b7280;--warn:#fbbf24;--accent:#60a5fa}
+    .banner{background:#422006;border-color:#78350f}
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>{{COMPANY_NAME}} ({{TICKER}}) — 업데이트 보고서</h1>
+<p class="sub">
+  이전 분석 {{PREVIOUS_DATE}} → 현재 {{DATA_CUTOFF}} ({{DAYS_ELAPSED}}일 경과) ·
+  분석 모드 <strong>{{ANALYSIS_MODE}}</strong> · 재무 기준 {{FS_DIV}}
+</p>
+
+<div class="banner">
+  <strong>본 보고서는 투자 자문이 아니며 교육·연구용 예제입니다.</strong>
+  매수·매도 의견, 목표주가, 컨센서스를 제시하지 않습니다.
+</div>
+
+<div class="delta-box">
+  <strong>재실행한 모듈:</strong> {{CHANGED_MODULES}}<br>
+  <strong>이전 결과를 재사용한 모듈:</strong> {{REUSED_MODULES}}<br>
+  <strong>재수집 사유:</strong> {{REFETCH_REASON}}
+</div>
+
+<!-- 1 ─────────────────────────────────────────────────────────── -->
+<h2>1. 무엇이 바뀌었나</h2>
+<div class="grid">
+  <div class="kpi">
+    <div class="k">종합점수</div>
+    <div class="v">{{COMPOSITE_SCORE}}</div>
+    <div class="d {{SCORE_DELTA_CLASS}}">{{SCORE_DELTA}} (이전 {{PREV_COMPOSITE_SCORE}})</div>
+  </div>
+  <div class="kpi">
+    <div class="k">판단 신뢰도</div>
+    <div class="v">{{COMPOSITE_CONFIDENCE}}</div>
+    <div class="d {{CONF_DELTA_CLASS}}">{{CONF_DELTA}}</div>
+  </div>
+  <div class="kpi">
+    <div class="k">데이터 완전성</div>
+    <div class="v">{{DATA_COMPLETENESS}}</div>
+    <div class="d {{COMPLETENESS_DELTA_CLASS}}">{{COMPLETENESS_DELTA}}</div>
+  </div>
+  <div class="kpi">
+    <div class="k">종합 의견</div>
+    <div class="v">{{VERDICT}}</div>
+    <div class="d {{VERDICT_DELTA_CLASS}}">이전: {{PREV_VERDICT}}</div>
+  </div>
+</div>
+
+<h2>2. 모듈별 변화</h2>
+<table>
+  <thead>
+    <tr><th>모듈</th><th class="num">이전</th><th class="num">현재</th><th class="num">변화</th>
+        <th>상태</th><th>주요 변경 근거</th></tr>
+  </thead>
+  <tbody>
+  <!-- {{#each MODULE_DELTAS}}  (재사용 모듈 행에는 class="reused") -->
+    <tr class="{{ROW_CLASS}}">
+      <td>{{MODULE}}</td>
+      <td class="num">{{PREV_SCORE}}</td>
+      <td class="num">{{CURR_SCORE}}</td>
+      <td class="num {{DELTA_CLASS}}">{{DELTA}}</td>
+      <td>{{STATUS}}</td>
+      <td>{{CHANGE_REASON}} <span class="eid">{{EVIDENCE_IDS}}</span></td>
+    </tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+<p class="src">
+  빗금 표시 행은 <strong>재실행하지 않고 이전 결과를 재사용</strong>한 모듈이다.
+  변화량은 Python 이 계산한 값이며, N/A ↔ 값 전환도 변화로 표시된다.
+</p>
+
+<h2>3. 새로 반영된 데이터</h2>
+<table>
+  <thead><tr><th>항목</th><th class="num">이전</th><th class="num">현재</th><th>출처 / 접수번호</th></tr></thead>
+  <tbody>
+  <!-- {{#each NEW_DATA}} -->
+    <tr><td>{{ITEM}}</td><td class="num">{{PREV_VALUE}}</td>
+        <td class="num">{{CURR_VALUE}}</td>
+        <td class="src">{{SOURCE_AND_DATE}} {{RCEPT_NO_LINK}}</td></tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+
+<h3>신규 공시 (촉매·위험 후보)</h3>
+<ul>
+  <!-- {{#each NEW_DISCLOSURES}} -->
+  <li>{{RCEPT_DT}} — {{REPORT_NM}} <span class="eid">{{EVIDENCE_ID}}</span>
+      <span class="src">{{RCEPT_NO_LINK}}</span></li>
+  <!-- {{/each}} -->
+</ul>
+
+<!-- 4 ─────────────────────────────────────────────────────────── -->
+<h2>4. 이전 판단은 여전히 유효한가</h2>
+<p class="interp">{{THESIS_STATUS}}</p>
+
+<h3>훼손 조건 점검</h3>
+<table>
+  <thead><tr><th>이전에 제시한 훼손 조건</th><th>현재 상태</th><th>촉발 여부</th><th>근거</th></tr></thead>
+  <tbody>
+  <!-- {{#each INVALIDATION_CHECKS}} -->
+    <tr><td>{{CONDITION}}</td><td>{{CURRENT_STATE}}</td>
+        <td class="{{TRIGGERED_CLASS}}">{{TRIGGERED}}</td>
+        <td><span class="eid">{{EVIDENCE_IDS}}</span></td></tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+
+<h3>모니터링 지표 갱신</h3>
+<table>
+  <thead><tr><th>지표</th><th class="num">이전</th><th class="num">현재</th><th>임계 신호</th><th>도달?</th></tr></thead>
+  <tbody>
+  <!-- {{#each MONITORING}} -->
+    <tr><td>{{NAME}}</td><td class="num">{{PREV}}</td><td class="num">{{CURR}}</td>
+        <td>{{THRESHOLD}}</td><td class="{{HIT_CLASS}}">{{HIT}}</td></tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+
+<!-- 5 ─────────────────────────────────────────────────────────── -->
+<h2>5. 갱신된 종합 평가</h2>
+<p><span class="verdict">{{VERDICT}}</span> <span class="src">(이전: {{PREV_VERDICT}})</span></p>
+<p class="interp">{{VERDICT_REASON}}</p>
+<p class="src">
+  종합점수 = Σ(모듈점수 × 재정규화가중치) / 100 — <strong>Python 이 계산</strong>했다.
+  {{RENORMALIZED_NOTE}}
+</p>
+
+<h2>6. 데이터 한계</h2>
+<ul><!-- {{#each DATA_LIMITATIONS}} --><li>{{LIMITATION}}</li><!-- {{/each}} --></ul>
+<p class="src">
+  재사용된 모듈의 근거는 <strong>{{PREVIOUS_DATE}} 시점</strong>의 것이다.
+  그 이후 변동은 반영되지 않았다.
+</p>
+
+<h2>7. 출처와 기준일</h2>
+<table>
+  <thead><tr><th>제공자</th><th>출처 유형</th><th>엔드포인트</th><th>접수번호</th><th>수집 시각</th></tr></thead>
+  <tbody>
+  <!-- {{#each SOURCES}} -->
+    <tr><td>{{PROVIDER}}</td><td>{{SOURCE_TYPE}}</td><td>{{ENDPOINT}}</td>
+        <td>{{RCEPT_NO_LINK}}</td><td>{{RETRIEVED_AT}}</td></tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+
+<h2>8. 검증 결과</h2>
+<table>
+  <thead><tr><th>게이트</th><th>결과</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td>Gate 1 — Identity</td><td>{{G1_STATUS}}</td><td>{{G1_NOTE}}</td></tr>
+    <tr><td>Gate 2 — Data</td><td>{{G2_STATUS}}</td><td>{{G2_NOTE}}</td></tr>
+    <tr><td>Gate 3 — Analysis</td><td>{{G3_STATUS}}</td><td>{{G3_NOTE}}</td></tr>
+    <tr><td>Gate 4 — Report</td><td>{{G4_STATUS}}</td><td>{{G4_NOTE}}</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  <p><strong>본 보고서는 투자 자문이 아닙니다.</strong> 교육·연구용 자동 생성 예제이며
+  매수·매도를 권유하지 않습니다.</p>
+  <p>이전 보고서: {{PREVIOUS_REPORT_PATH}} ({{PREVIOUS_DATE}}) ·
+  데이터 출처: OpenDART(공식), pykrx(비공식 래퍼).</p>
+</footer>
+
+</main>
+</body>
+</html>

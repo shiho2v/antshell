@@ -1,0 +1,104 @@
+# analysis-modes.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# 분석 관점(mode)별 모듈 가중치. 각 모드의 가중치 합은 **반드시 100**이다.
+# (tests/test_units.py::test_mode_weights_sum_to_100 이 강제한다)
+#
+# 사용자가 관점을 지정하지 않으면 default(balanced)를 쓰고,
+# **보고서 Executive Summary에 적용된 모드를 표시**한다 (Phase 5).
+#
+# 일부 모듈만 실행하는 요청(CANSLIM·밸류에이션 등)에서는
+# 실행된 모듈의 가중치만 남기고 **합이 100이 되도록 재정규화**한다.
+# 재정규화 사실은 보고서에 명시한다.
+# ─────────────────────────────────────────────────────────────────────────────
+
+default: balanced
+
+modes:
+
+  balanced:
+    label: 균형
+    description: 특정 관점을 지정하지 않았을 때의 기본값. 어느 축도 과대평가하지 않는다.
+    weights:
+      business: 10
+      quality: 15
+      growth: 15
+      moat: 15
+      valuation: 15
+      trend: 10
+      risk: 15
+      catalyst: 5
+
+  growth:
+    label: 성장
+    description: 이익 성장의 크기와 지속성을 중심으로 본다.
+    weights:
+      business: 5
+      quality: 15
+      growth: 25
+      moat: 15
+      valuation: 10
+      trend: 15
+      risk: 10
+      catalyst: 5
+
+  value:
+    label: 가치
+    description: 가격과 내재가치의 괴리를 중심으로 본다. 촉매에 가중치를 두지 않는다.
+    weights:
+      business: 10
+      quality: 20
+      growth: 10
+      moat: 15
+      valuation: 25
+      trend: 5
+      risk: 15
+      catalyst: 0
+
+  long-term:
+    label: 장기
+    description: 사업의 지속성과 해자를 중심으로 본다. 단기 추세·촉매는 거의 보지 않는다.
+    weights:
+      business: 15
+      quality: 20
+      growth: 15
+      moat: 20
+      valuation: 10
+      trend: 5
+      risk: 15
+      catalyst: 0
+
+  momentum:
+    label: 모멘텀
+    description: 추세와 촉매를 중심으로 본다. 해자·밸류에이션 비중이 낮다.
+    weights:
+      business: 5
+      quality: 10
+      growth: 20
+      moat: 5
+      valuation: 5
+      trend: 30
+      risk: 10
+      catalyst: 15
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 종합 의견 등급 — 매수/매도 표현은 사용하지 않는다 (Phase 11).
+# 점수만으로 자동 결정하지 않는다: confidence 와 data_completeness 가
+# 임계 미만이면 점수와 무관하게 '판단 유보'로 강등된다.
+# ─────────────────────────────────────────────────────────────────────────────
+verdict_scale:
+  - id: positive
+    label: 긍정적 관찰
+    min_score: 70
+  - id: neutral
+    label: 중립적 관찰
+    min_score: 50
+  - id: conservative
+    label: 보수적 관찰
+    min_score: 0
+  - id: withheld
+    label: 판단 유보
+    # 점수 무관 — 아래 조건 중 하나라도 걸리면 강등
+    force_when:
+      data_completeness_below: 0.5     # 필요 evidence의 50% 미만 확보
+      confidence_below: 0.4
+      any_gate_failed: true

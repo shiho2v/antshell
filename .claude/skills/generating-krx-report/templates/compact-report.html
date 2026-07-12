@@ -1,0 +1,213 @@
+<!doctype html>
+<!--
+  compact-report.html — 부분 분석 보고서 (CANSLIM / 밸류에이션)
+  ─────────────────────────────────────────────────────────────────────────────
+  full-report.html 과 동일한 데이터 규칙을 따른다:
+    - 수치는 manifest/composite/module-result 에서만 인용 (원시 JSON 금지)
+    - 모든 수치에 (출처, 기준일). DART 수치는 rcept_no.
+    - N/A 는 사유와 함께. 0 으로 표기하지 않는다.
+    - 매수·매도 표현 금지. 목표주가·컨센서스 생성 금지.
+
+  ⚠️ 일부 모듈만 실행되었으므로 종합점수는 **실행 모듈의 가중치를 재정규화**해 계산된다.
+     이 사실을 반드시 표시한다 ({{RENORMALIZED_NOTE}}).
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>{{COMPANY_NAME}}({{TICKER}}) — {{REPORT_TITLE}}</title>
+<style>
+  :root{--fg:#1a1a1a;--mut:#6b7280;--line:#e5e7eb;--bg:#fff;--card:#f9fafb;
+        --na:#9ca3af;--warn:#b45309;--accent:#1d4ed8;--pos:#047857;--neg:#b91c1c}
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem;background:var(--bg);color:var(--fg);
+       font:16px/1.7 -apple-system,"Segoe UI","Malgun Gothic",sans-serif}
+  main{max-width:52rem;margin:0 auto}
+  h1{font-size:1.5rem;margin:0 0 .3rem}
+  h2{font-size:1.15rem;margin:2rem 0 .7rem;padding-bottom:.35rem;border-bottom:2px solid var(--line)}
+  h3{font-size:1rem;margin:1.2rem 0 .4rem}
+  .sub{color:var(--mut);font-size:.88rem;margin-bottom:1.2rem}
+  .banner{background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;
+          padding:.75rem .9rem;font-size:.85rem;margin:1rem 0}
+  .scope{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--warn);
+         border-radius:6px;padding:.75rem .9rem;font-size:.85rem;margin:1rem 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));gap:.7rem;margin:1rem 0}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.7rem}
+  .kpi .k{font-size:.72rem;color:var(--mut);text-transform:uppercase}
+  .kpi .v{font-size:1.25rem;font-weight:700;margin-top:.15rem}
+  table{width:100%;border-collapse:collapse;margin:.9rem 0;font-size:.88rem}
+  th,td{border:1px solid var(--line);padding:.45rem .55rem;text-align:left;vertical-align:top}
+  th{background:var(--card);font-weight:600}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .src{color:var(--mut);font-size:.76rem;white-space:nowrap}
+  .na{color:var(--na);font-style:italic}
+  .fact::before{content:"[사실] ";color:var(--accent);font-weight:600;font-size:.78rem}
+  .interp::before{content:"[해석] ";color:var(--warn);font-weight:600;font-size:.78rem}
+  .fcast::before{content:"[전망·조건부] ";color:var(--mut);font-weight:600;font-size:.78rem}
+  .eid{font-family:ui-monospace,monospace;font-size:.7rem;color:var(--mut);
+       background:var(--card);border:1px solid var(--line);border-radius:4px;padding:0 .25rem}
+  .verdict{display:inline-block;padding:.3rem .8rem;border-radius:999px;font-weight:700;
+           background:var(--card);border:1px solid var(--line)}
+  .gate-pass{color:var(--pos);font-weight:600}
+  .gate-fail{color:var(--neg);font-weight:600}
+  ul{margin:.35rem 0 .7rem;padding-left:1.2rem}
+  footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--line);
+         color:var(--mut);font-size:.8rem}
+  @media(prefers-color-scheme:dark){
+    :root{--fg:#e5e7eb;--mut:#9ca3af;--line:#374151;--bg:#111827;--card:#1f2937;
+          --na:#6b7280;--warn:#fbbf24;--accent:#60a5fa;--pos:#34d399;--neg:#f87171}
+    .banner{background:#422006;border-color:#78350f}
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>{{COMPANY_NAME}} ({{TICKER}}) — {{REPORT_TITLE}}</h1>
+<p class="sub">
+  {{MARKET}} · 분석 모드 <strong>{{ANALYSIS_MODE}}</strong> ·
+  기준일 {{DATA_CUTOFF}} · 재무 기준 {{FS_DIV}}
+</p>
+
+<div class="banner">
+  <strong>본 보고서는 투자 자문이 아니며 교육·연구용 예제입니다.</strong>
+  매수·매도 의견, 목표주가, 컨센서스를 제시하지 않습니다.
+</div>
+
+<div class="scope">
+  <strong>⚠️ 부분 분석입니다.</strong>
+  이 보고서는 <strong>{{REQUIRED_MODULES}}</strong> 만 정식 채점했습니다.
+  ({{OPTIONAL_MODULES}} 는 참고 요약으로만 인용) <br>
+  {{RENORMALIZED_NOTE}}
+  따라서 <strong>기업 전체에 대한 종합 판단이 아닙니다.</strong>
+</div>
+
+<!-- 1 ─────────────────────────────────────────────────────────── -->
+<h2>1. 분석 범위 (Analysis Contract)</h2>
+<table>
+  <tr><th>요청 유형</th><td>{{REQUEST_TYPE}}</td></tr>
+  <tr><th>분석 모드</th><td>{{ANALYSIS_MODE}} — {{MODE_REASON}}</td></tr>
+  <tr><th>정식 채점 모듈</th><td>{{REQUIRED_MODULES}}</td></tr>
+  <tr><th>요약 인용 모듈</th><td>{{OPTIONAL_MODULES}}</td></tr>
+  <tr><th>미해결 항목</th><td>{{UNRESOLVED_ITEMS}}</td></tr>
+  <tr><th>금지된 추론</th><td>{{PROHIBITED_INFERENCES}}</td></tr>
+</table>
+
+<!-- 2 ─────────────────────────────────────────────────────────── -->
+<h2>2. Executive Summary</h2>
+<div class="grid">
+  <div class="kpi"><div class="k">종합점수(부분)</div><div class="v">{{COMPOSITE_SCORE}}</div></div>
+  <div class="kpi"><div class="k">판단 신뢰도</div><div class="v">{{COMPOSITE_CONFIDENCE}}</div></div>
+  <div class="kpi"><div class="k">데이터 완전성</div><div class="v">{{DATA_COMPLETENESS}}</div></div>
+  <div class="kpi"><div class="k">종합 의견</div><div class="v">{{VERDICT}}</div></div>
+</div>
+<table>
+  <tr><th>가장 강한 모듈</th><td>{{STRONGEST_MODULE}}</td></tr>
+  <tr><th>가장 약한 모듈</th><td>{{WEAKEST_MODULE}}</td></tr>
+</table>
+
+<h3>핵심 포인트</h3>
+<ul><!-- {{#each KEY_POINTS}} --><li>{{POINT}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} --></ul>
+<h3>핵심 위험</h3>
+<ul><!-- {{#each KEY_RISKS}} --><li>{{RISK}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} --></ul>
+<h3>판단을 바꿀 조건</h3>
+<ul><!-- {{#each INVALIDATING_CONDITIONS}} --><li>{{CONDITION}}</li><!-- {{/each}} --></ul>
+
+<!-- 3 ─────────────────────────────────────────────────────────── -->
+<h2>3. 기업 요약</h2>
+<p class="fact">{{ONE_LINER}} <span class="eid">{{EVIDENCE_IDS}}</span></p>
+{{BUSINESS_SUMMARY}}
+
+<!-- 4 정식 채점 모듈 ──────────────────────────────────────────── -->
+<!-- {{#each MODULES}} -->
+<h2>{{SECTION_NO}}. {{MODULE_TITLE}}</h2>
+<div class="grid">
+  <div class="kpi"><div class="k">점수</div><div class="v">{{MODULE_SCORE}}</div></div>
+  <div class="kpi"><div class="k">신뢰도</div><div class="v">{{MODULE_CONFIDENCE}}</div></div>
+  <div class="kpi"><div class="k">데이터 확보율</div><div class="v">{{MODULE_COVERAGE}}</div></div>
+  <div class="kpi"><div class="k">가중치</div><div class="v">{{MODULE_WEIGHT}}</div></div>
+</div>
+
+<table>
+  <thead><tr><th>기준</th><th>지표</th><th class="num">값</th><th>등급</th><th>근거</th></tr></thead>
+  <tbody>
+  <!-- {{#each CRITERIA}} -->
+    <tr><td>{{CRITERION_NAME}}</td><td>{{METRIC}}</td>
+        <td class="num">{{METRIC_VALUE}} <span class="src">{{SOURCE_AND_DATE}}</span></td>
+        <td>{{LEVEL_OR_NA}}</td><td><span class="eid">{{EVIDENCE_IDS}}</span></td></tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+<p class="src">
+  N/A 항목은 점수에서 <strong>제외</strong>되었으며 0점으로 채점되지 않았다.
+  {{CREDENTIAL_NOTE}}
+</p>
+
+{{MODULE_VERDICT}}
+
+<h3>강점</h3>
+<ul><!-- {{#each STRENGTHS}} --><li>{{POINT}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} --></ul>
+<h3>약점</h3>
+<ul><!-- {{#each WEAKNESSES}} --><li>{{POINT}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} --></ul>
+<h3>상충 근거</h3>
+<ul><!-- {{#each COUNTER_EVIDENCE}} --><li>{{POINT}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} --></ul>
+<!-- {{/each}} -->
+
+<!-- 5 요약 인용 모듈 ──────────────────────────────────────────── -->
+<h2>{{SUMMARY_SECTION_NO}}. 참고 요약 (정식 채점하지 않음)</h2>
+<p class="src">아래 모듈은 <strong>채점되지 않았고 종합점수에 포함되지 않았다.</strong> 맥락 제공용이다.</p>
+<table>
+  <thead><tr><th>모듈</th><th>요약</th><th>근거</th></tr></thead>
+  <tbody>
+  <!-- {{#each SUMMARY_MODULES}} -->
+    <tr><td>{{MODULE}}</td><td>{{SUMMARY}}</td><td><span class="eid">{{EVIDENCE_IDS}}</span></td></tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+
+<!-- 6 ─────────────────────────────────────────────────────────── -->
+<h2>{{VERDICT_SECTION_NO}}. 종합 평가 (부분 분석 기준)</h2>
+<p><span class="verdict">{{VERDICT}}</span></p>
+<p class="interp">{{VERDICT_REASON}}</p>
+<p class="src">
+  종합점수 = Σ(모듈점수 × 재정규화가중치) / 100 — <strong>Python 이 계산</strong>했다.
+  {{RENORMALIZED_NOTE}}
+</p>
+
+<h2>{{LIMIT_SECTION_NO}}. 데이터 한계</h2>
+<ul><!-- {{#each DATA_LIMITATIONS}} --><li>{{LIMITATION}}</li><!-- {{/each}} --></ul>
+<h3>공식 경로가 없어 제공하지 않는 항목</h3>
+<ul><!-- {{#each UNSUPPORTED}} --><li>{{ITEM}}</li><!-- {{/each}} --></ul>
+
+<h2>{{SOURCE_SECTION_NO}}. 출처와 기준일</h2>
+<table>
+  <thead><tr><th>제공자</th><th>출처 유형</th><th>엔드포인트</th><th>접수번호</th><th>수집 시각</th></tr></thead>
+  <tbody>
+  <!-- {{#each SOURCES}} -->
+    <tr><td>{{PROVIDER}}</td><td>{{SOURCE_TYPE}}</td><td>{{ENDPOINT}}</td>
+        <td>{{RCEPT_NO_LINK}}</td><td>{{RETRIEVED_AT}}</td></tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+
+<h2>{{GATE_SECTION_NO}}. 검증 결과</h2>
+<table>
+  <thead><tr><th>게이트</th><th>결과</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td>Gate 1 — Identity</td><td class="{{G1_CLASS}}">{{G1_STATUS}}</td><td>{{G1_NOTE}}</td></tr>
+    <tr><td>Gate 2 — Data</td><td class="{{G2_CLASS}}">{{G2_STATUS}}</td><td>{{G2_NOTE}}</td></tr>
+    <tr><td>Gate 3 — Analysis</td><td class="{{G3_CLASS}}">{{G3_STATUS}}</td><td>{{G3_NOTE}}</td></tr>
+    <tr><td>Gate 4 — Report</td><td class="{{G4_CLASS}}">{{G4_STATUS}}</td><td>{{G4_NOTE}}</td></tr>
+  </tbody>
+</table>
+
+<footer>
+  <p><strong>본 보고서는 투자 자문이 아닙니다.</strong> 교육·연구용 자동 생성 예제이며
+  매수·매도를 권유하지 않습니다. 일부 모듈만 분석한 <strong>부분 보고서</strong>이므로
+  기업 전체에 대한 판단으로 사용해서는 안 됩니다.</p>
+  <p>데이터 출처: OpenDART(공식), pykrx(비공식 래퍼 — KRX/Naver).
+  기준일 {{DATA_CUTOFF}} 이후 변동은 반영되지 않았습니다.</p>
+</footer>
+
+</main>
+</body>
+</html>

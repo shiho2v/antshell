@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "analysis-contract.schema.json",
+  "title": "Analysis Contract",
+  "description": "분석을 시작하기 전에 '무엇을 분석하고 무엇을 하지 않을지'를 고정한다. 사용자가 명시하지 않은 것은 임의로 채우지 않는다. 기본값을 적용했으면 assumptions 에, 결과에 중대한 영향을 주는데 기본값이 없으면 unresolved_items 에 기록한다.",
+  "type": "object",
+  "required": [
+    "company_name",
+    "ticker",
+    "market",
+    "request_type",
+    "analysis_mode",
+    "required_modules",
+    "assumptions",
+    "unresolved_items",
+    "prohibited_inferences",
+    "data_cutoff"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "company_name": {"type": ["string", "null"]},
+    "ticker": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{6}$"
+    },
+    "market": {
+      "type": ["string", "null"],
+      "enum": ["KOSPI", "KOSDAQ", "KONEX", null]
+    },
+    "corp_code": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{8}$",
+      "description": "DART 8자리. Gate 1 에서 확정."
+    },
+    "request_type": {
+      "type": ["string", "null"],
+      "enum": ["comprehensive", "canslim", "valuation", "update", null],
+      "description": "config/module-registry.yaml 의 request_profiles 키와 일치."
+    },
+    "analysis_mode": {
+      "type": "string",
+      "enum": ["balanced", "growth", "value", "long-term", "momentum"],
+      "default": "balanced"
+    },
+    "investment_horizon": {
+      "type": "string",
+      "enum": ["unspecified", "short", "mid", "long"],
+      "default": "unspecified",
+      "description": "**미지정 시 장기/단기로 임의 해석하지 않는다.** unspecified 로 남기고 unresolved_items 에 기록."
+    },
+    "valuation_requested": {"type": "boolean", "default": true},
+    "target_price_requested": {
+      "type": "boolean",
+      "default": false,
+      "description": "true 여도 목표주가 산출 근거(컨센서스/Forward EPS)가 존재하지 않으므로 생성하지 않는다. source-priority.yaml: target_price = unsupported."
+    },
+    "forecast_allowed": {"type": "boolean", "default": false},
+    "consensus_allowed": {
+      "type": "boolean",
+      "default": false,
+      "description": "true 여도 무료 공식 컨센서스 API가 없으므로 Forward 실적을 만들지 않는다."
+    },
+    "news_allowed": {
+      "type": "boolean",
+      "default": false,
+      "description": "false 이면 뉴스로 공시 데이터를 보완하지 않는다."
+    },
+    "peer_comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requested": {"type": "boolean", "default": false},
+        "selection_rule": {
+          "type": ["string", "null"],
+          "description": "규칙이 없으면 경쟁사를 임의 선택하지 않는다. null 이면 비교를 수행하지 않는다."
+        },
+        "explicit_peers": {
+          "type": "array",
+          "items": {"type": "string", "pattern": "^[0-9]{6}$"},
+          "description": "사용자가 직접 지정한 비교기업 티커만 허용."
+        }
+      }
+    },
+    "required_modules": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "정식 채점 대상 모듈"
+    },
+    "optional_modules": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "요약(summary)으로만 인용하는 모듈. 종합점수에 포함하지 않는다."
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "applied_value", "reason"],
+        "properties": {
+          "field": {"type": "string"},
+          "applied_value": {},
+          "reason": {"type": "string"}
+        }
+      },
+      "description": "기본값을 적용한 사실을 반드시 기록한다."
+    },
+    "unresolved_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["field", "impact"],
+        "properties": {
+          "field": {"type": "string"},
+          "impact": {"type": "string"},
+          "question_for_user": {"type": "string"}
+        }
+      },
+      "description": "결과에 중대한 영향을 주지만 기본값이 없는 항목."
+    },
+    "prohibited_inferences": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "이 분석에서 명시적으로 금지되는 추론. 예: '목표주가 산출', '경쟁사 임의 선정', '시장점유율 추정'"
+    },
+    "unsupported_data": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "source-priority.yaml 에서 unsupported 로 확인된 항목. 보고서 '데이터 한계'에 그대로 노출한다."
+    },
+    "credentials_available": {
+      "type": "object",
+      "additionalProperties": {"type": "boolean"},
+      "description": "DART_API_KEY / KRX_ID / KRX_PW / KRX_OPEN_API_KEY 의 존재 여부. 값은 저장하지 않는다."
+    },
+    "data_cutoff": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "이 날짜 이후 데이터는 사용하지 않는다. 미래일자 금지."
+    },
+    "created_at": {"type": "string"}
+  }
+}

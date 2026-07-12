@@ -1,0 +1,14 @@
+# 실행 산출물은 커밋하지 않는다 (재현 가능하며, 종목·시점마다 달라진다).
+data/raw/
+data/normalized/
+data/evidence/
+data/module-results/
+data/*.json
+outputs/
+
+# 디렉터리 구조는 유지한다
+!.gitkeep
+!data/.gitkeep
+
+__pycache__/
+*.pyc

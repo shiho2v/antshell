@@ -282,9 +282,17 @@ def gate4(
         body = re.sub(r"<[^>]+>", " ", html)
         for ph in ("매수", "매도"):
             for mm in re.finditer(ph, body):
+                # (a) 수급 용어 '순매수/순매도' 는 투자의견이 아니다 — 바로 앞 글자로 판별.
+                if mm.start() > 0 and body[mm.start() - 1] == "순":
+                    continue
+                # (b) 부정문만 허용한다. 부정어가 **바로 뒤에 붙어 있어야** 하며,
+                #     멀리 떨어진 면책 문구가 실제 매수 권유를 가려주지 못하게 창을 좁게 잡는다.
+                #     예: "매수·매도 의견이 아니며"(허용) vs "매수 의견을 제시한다"(위반).
+                after = body[mm.end(): mm.end() + 16]
+                if re.search(r"않|없|금지|아니|권유", after):
+                    continue
                 ctx = body[max(0, mm.start() - 30): mm.end() + 30]
-                if not re.search(r"않|없|금지|순매수|순매도|기관|외국인|표현", ctx):
-                    buysell.append(f"'{ph}' 표현 사용: ...{ctx.strip()}...")
+                buysell.append(f"'{ph}' 표현 사용: ...{ctx.strip()}...")
     checks.append({
         "check": "매수·매도 표현 금지",
         "result": "fail" if buysell else "pass",

@@ -182,11 +182,17 @@ def score_module(module: str, spec: dict, metrics: dict, creds: dict) -> dict:
 
     coverage = round(len(scored) / len(rows), 3) if rows else None
 
-    # confidence: 데이터 확보율을 기본으로 하되, judged 모듈은 근거 밀도를 반영한다.
+    # confidence: 데이터 확보율을 기본으로 하되, **judged criterion 에 한해** 근거 밀도를 반영한다.
     # **점수와 독립적이다** — 데이터가 부족하면 점수를 깎지 않고 confidence 를 낮춘다.
+    #
+    # ⚠️ auto criterion 은 criterion 단위 evidence_ids 가 비어 있는 것이 정상이다
+    #    (근거는 metrics.json 의 지표 자체이며 evidence pack 에 별도로 존재한다).
+    #    이를 '근거 없음'으로 세면 정량 모듈의 confidence 가 항상 0 이 되어,
+    #    종합 신뢰도가 무너지고 판단 유보가 잘못 강제된다.
     conf = coverage
-    if judgment and scored:
-        avg_ev = sum(len(r.get("evidence_ids") or []) for r in scored) / len(scored)
+    judged_scored = [r for r in scored if r.get("type") == "judged"]
+    if judged_scored:
+        avg_ev = sum(len(r.get("evidence_ids") or []) for r in judged_scored) / len(judged_scored)
         conf = round(min(1.0, (coverage or 0) * min(1.0, avg_ev / 2.0)), 3)
     if judgment and judgment.get("counter_evidence"):
         conf = round(max(0.0, (conf or 0) - 0.1 * len(judgment["counter_evidence"])), 3)

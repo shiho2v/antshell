@@ -316,6 +316,31 @@ class TestScoring(unittest.TestCase):
         self.assertIsNone(b["level"])
         self.assertIsNotNone(b["na_reason"])
 
+    def test_auto_module_confidence_not_zeroed_by_empty_criterion_evidence(self):
+        """정량(auto) 모듈의 confidence 가 0 으로 무너지면 안 된다.
+
+        auto criterion 은 criterion 단위 evidence_ids 가 비어 있는 것이 정상이다
+        (근거는 지표 자체). 이를 '근거 없음'으로 세면 confidence 가 0 이 되고,
+        종합 신뢰도가 임계 아래로 눌려 **판단 유보가 잘못 강제된다.**
+        """
+        crit = [{"id": "A", "name": "a", "type": "auto", "weight": 100,
+                 "metric": "m1", "bands": [[None, 10, 0], [10, None, 3]]}]
+        metrics = {"ticker": "008490",
+                   "metrics": {"m1": {"value": 20, "na_reason": None}}}
+
+        # 해석 서술만 담긴 judgment(criteria 비어 있음)가 존재하는 상황
+        jp = C.judgment_path("008490", "quality")
+        jp.parent.mkdir(parents=True, exist_ok=True)
+        C.write_json(jp, {"module": "quality", "criteria": [],
+                          "verdict": "narrative only"})
+        try:
+            r = SM.score_module("quality", {"criteria": crit}, metrics, {})
+            self.assertEqual(r["score"], 100.0)
+            self.assertEqual(r["confidence"], 1.0,
+                             "auto 모듈 confidence 가 0 으로 붕괴하면 안 된다")
+        finally:
+            jp.unlink(missing_ok=True)
+
     def test_all_na_yields_null_score_not_zero(self):
         crit = [{"id": "A", "name": "a", "type": "auto", "weight": 100,
                  "metric": "m1", "bands": [[None, None, 0]]}]
@@ -642,6 +667,23 @@ class TestClaimValidation(unittest.TestCase):
         g4 = VR.gate4("009150", [self._claim()], {"Q-OPM-001"},
                       self._comp(), {}, html)
         self.assertTrue(any("매수" in e for e in g4["errors"]))
+
+    def test_disclaimer_style_negation_is_allowed(self):
+        """'매수·매도 의견이 아니며' 같은 부정문은 위반이 아니다."""
+        html = ("<p>매수·매도 의견이 아니며, 4개 관찰 등급 중 하나다. "
+                "특정 종목의 매수·매도를 권유하지 않습니다. 투자 자문이 아닙니다.</p>")
+        g4 = VR.gate4("009150", [self._claim()], {"Q-OPM-001"},
+                      self._comp(), {}, html)
+        bs = next(c for c in g4["checks"] if "매수·매도" in c["check"])
+        self.assertEqual(bs["result"], "pass")
+
+    def test_far_away_disclaimer_does_not_excuse_a_real_recommendation(self):
+        """멀리 떨어진 면책 문구가 실제 매수 권유를 가려주면 안 된다."""
+        html = ("<p>본 종목은 매수 의견을 제시한다. 투자 자문이 아니다.</p>")
+        g4 = VR.gate4("009150", [self._claim()], {"Q-OPM-001"},
+                      self._comp(), {}, html)
+        self.assertTrue(any("매수" in e for e in g4["errors"]),
+                        "면책 문구가 있어도 매수 권유는 잡아야 한다")
 
     def test_institutional_net_buy_phrase_is_not_flagged(self):
         """'순매수' 는 수급 용어이지 매수 의견이 아니다."""

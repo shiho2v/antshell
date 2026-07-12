@@ -184,10 +184,18 @@ def fetch_business_section(corp_code: str) -> dict | None:
         log(f"원문 문서 없음 (rcept_no={rcept_no}).")
         return None
 
+    # document.xml ZIP 에는 **여러 XML** 이 들어 있다 (본문 + 첨부: 감사보고서 등).
+    # 실측(서흥 20260319001055): ['..._00761.xml', '..._00760.xml', '20260319001055.xml']
+    # namelist()[0] 을 집으면 **첨부문서**를 읽게 되어 「사업의 내용」이 통째로 없다.
+    # 본문은 접수번호와 같은 이름의 파일이다. 없으면 가장 큰 파일로 폴백한다.
     names = zf.namelist()
     if not names:
         return None
-    raw = zf.read(names[0])
+    main = f"{rcept_no}.xml"
+    if main not in names:
+        main = max(names, key=lambda n: zf.getinfo(n).file_size)
+        log(f"본문 파일명을 찾지 못해 최대 크기 파일로 폴백: {main}")
+    raw = zf.read(main)
 
     # DART 원문은 EUC-KR 또는 UTF-8
     text = None
@@ -207,13 +215,23 @@ def fetch_business_section(corp_code: str) -> dict | None:
     plain = re.sub(r"[ \t]+", " ", plain)
     plain = re.sub(r"\n\s*\n+", "\n", plain)
 
-    start = re.search(r"(II\.|Ⅱ\.)\s*사업의\s*내용", plain)
-    end = re.search(r"(III\.|Ⅲ\.)\s*재무에\s*관한\s*사항", plain)
+    # 태그를 공백으로 치환했으므로 '사업의 내용' 이 '사 업 의 내 용' 처럼 쪼개질 수 있다.
+    # 글자 사이 공백을 허용하는 느슨한 패턴으로 찾는다 (로마숫자 표기도 제출인마다 다르다).
+    def loose(s: str) -> str:
+        return r"\s*".join(map(re.escape, s))
+
+    start = re.search(loose("사업의 내용".replace(" ", "")), plain)
+    end = re.search(loose("재무에 관한 사항".replace(" ", "")), plain)
+
     if start:
-        section = plain[start.start(): end.start() if end and end.start() > start.start() else None]
+        stop = end.start() if (end and end.start() > start.start()) else None
+        section = plain[start.start():stop]
     else:
-        log("「II. 사업의 내용」 섹션 경계를 찾지 못해 원문 앞부분을 저장합니다.")
-        section = plain
+        # 경계를 못 찾으면 **앞부분을 사업의 내용인 척 저장하지 않는다** —
+        # 실제로는 주석·표지가 담겨 오독을 유발한다. 차라리 None 을 반환해 N/A 로 남긴다.
+        log("「사업의 내용」 섹션 경계를 찾지 못했습니다. "
+            "잘못된 텍스트를 사업 정보로 저장하지 않고 건너뜁니다 (해당 항목 N/A).")
+        return None
 
     truncated = len(section) > MAX_SECTION_CHARS
     section = section[:MAX_SECTION_CHARS]

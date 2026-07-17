@@ -26,7 +26,7 @@ def get_env(key: str) -> str:
     val = os.environ.get(key, "")
     if not val:
         try:
-            with open(".env") as f:
+            with open(".env", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
                     if line.startswith(key + "=") and not line.startswith("#"):
@@ -51,11 +51,11 @@ def get_last_commit_info() -> tuple[str | None, str | None, list[str]]:
     """
     try:
         msg = subprocess.check_output(
-            ["git", "log", "-1", "--pretty=%s"], text=True).strip()
+            ["git", "log", "-1", "--pretty=%s"], encoding="utf-8").strip()
         author = subprocess.check_output(
-            ["git", "log", "-1", "--pretty=%an"], text=True).strip()
+            ["git", "log", "-1", "--pretty=%an"], encoding="utf-8").strip()
         files = subprocess.check_output(
-            ["git", "diff", "HEAD~1", "--name-only"], text=True).strip()
+            ["git", "diff", "HEAD~1", "--name-only"], encoding="utf-8").strip()
         return msg, author, files.split("\n") if files else []
     except Exception:
         return None, None, []

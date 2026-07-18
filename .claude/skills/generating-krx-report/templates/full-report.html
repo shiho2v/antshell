@@ -1,0 +1,265 @@
+<!doctype html>
+<!--
+  full-report.html — 종합 기업분석 보고서 템플릿 (8개 모듈)
+  ─────────────────────────────────────────────────────────────────────────────
+  자리표시자 {{...}} 를 채워 사용한다. 채우는 값은 **반드시** 다음에서만 가져온다:
+    data/{ticker}_manifest.json / {ticker}_composite.json / module-results/*.json
+    필요한 evidence item
+  원시 API JSON·전체 재무제표를 읽고 채우지 않는다 (Phase 12).
+
+  규칙:
+    - 모든 수치 옆에 (출처, 기준일) 을 표기한다. DART 수치는 rcept_no 링크를 건다.
+    - N/A 는 공란·0 이 아니라 "N/A (사유)" 로 표기한다.
+    - 사실 / 해석 / 전망 을 구분 표기한다 (.fact / .interp / .fcast).
+    - 매수·매도 표현 금지. 종합의견은 4개 관찰 등급만.
+    - 반복 블록은 {{#each}} … {{/each}} 주석 구간을 복제해 채운다.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>{{COMPANY_NAME}}({{TICKER}}) 기업 종합평가</title>
+<style>
+  :root{--fg:#1a1a1a;--mut:#6b7280;--line:#e5e7eb;--bg:#fff;--card:#f9fafb;
+        --pos:#047857;--neg:#b91c1c;--warn:#b45309;--na:#9ca3af;--accent:#1d4ed8}
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1rem;background:var(--bg);color:var(--fg);
+       font:16px/1.7 -apple-system,"Segoe UI","Malgun Gothic",sans-serif}
+  main{max-width:60rem;margin:0 auto}
+  h1{font-size:1.7rem;margin:0 0 .3rem}
+  h2{font-size:1.25rem;margin:2.5rem 0 .8rem;padding-bottom:.4rem;
+     border-bottom:2px solid var(--line)}
+  h3{font-size:1.05rem;margin:1.5rem 0 .5rem}
+  .sub{color:var(--mut);font-size:.9rem;margin-bottom:1.5rem}
+  .banner{background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;
+          padding:.8rem 1rem;font-size:.88rem;margin:1rem 0}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(9rem,1fr));gap:.8rem;margin:1rem 0}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.8rem}
+  .kpi .k{font-size:.75rem;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+  .kpi .v{font-size:1.35rem;font-weight:700;margin-top:.2rem}
+  table{width:100%;border-collapse:collapse;margin:1rem 0;font-size:.9rem}
+  th,td{border:1px solid var(--line);padding:.5rem .6rem;text-align:left;vertical-align:top}
+  th{background:var(--card);font-weight:600}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .src{color:var(--mut);font-size:.78rem;white-space:nowrap}
+  .src a{color:var(--mut)}
+  .na{color:var(--na);font-style:italic}
+  .fact::before{content:"[사실] ";color:var(--accent);font-weight:600;font-size:.8rem}
+  .interp::before{content:"[해석] ";color:var(--warn);font-weight:600;font-size:.8rem}
+  .fcast::before{content:"[전망·조건부] ";color:var(--mut);font-weight:600;font-size:.8rem}
+  .eid{font-family:ui-monospace,monospace;font-size:.72rem;color:var(--mut);
+       background:var(--card);border:1px solid var(--line);border-radius:4px;padding:0 .25rem}
+  .verdict{display:inline-block;padding:.35rem .9rem;border-radius:999px;
+           font-weight:700;background:var(--card);border:1px solid var(--line)}
+  .gate-pass{color:var(--pos);font-weight:600}
+  .gate-fail{color:var(--neg);font-weight:600}
+  ul{margin:.4rem 0 .8rem;padding-left:1.2rem}
+  li{margin:.25rem 0}
+  footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);
+         color:var(--mut);font-size:.82rem}
+  @media(prefers-color-scheme:dark){
+    :root{--fg:#e5e7eb;--mut:#9ca3af;--line:#374151;--bg:#111827;--card:#1f2937;
+          --pos:#34d399;--neg:#f87171;--warn:#fbbf24;--na:#6b7280;--accent:#60a5fa}
+    .banner{background:#422006;border-color:#78350f}
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>{{COMPANY_NAME}} ({{TICKER}}) — 기업 종합평가</h1>
+<p class="sub">
+  {{MARKET}} · 분석 모드 <strong>{{ANALYSIS_MODE}}</strong> ·
+  기준일 {{DATA_CUTOFF}} · 생성 {{GENERATED_AT}} ·
+  재무 기준 {{FS_DIV}}
+</p>
+
+<div class="banner">
+  <strong>본 보고서는 투자 자문이 아니며 교육·연구용 예제입니다.</strong>
+  매수·매도 의견을 제시하지 않으며, 목표주가·컨센서스·전망치를 생성하지 않습니다
+  (해당 데이터의 공식 출처가 존재하지 않습니다).
+</div>
+
+<!-- 1 ─────────────────────────────────────────────────────────── -->
+<h2>1. 분석 범위와 Analysis Contract</h2>
+<table>
+  <tr><th>요청 유형</th><td>{{REQUEST_TYPE}}</td></tr>
+  <tr><th>분석 모드</th><td>{{ANALYSIS_MODE}} — {{MODE_REASON}}</td></tr>
+  <tr><th>투자기간</th><td>{{INVESTMENT_HORIZON}}</td></tr>
+  <tr><th>정식 채점 모듈</th><td>{{REQUIRED_MODULES}}</td></tr>
+  <tr><th>요약 인용 모듈</th><td>{{OPTIONAL_MODULES}}</td></tr>
+  <tr><th>적용된 기본값</th><td>{{ASSUMPTIONS}}</td></tr>
+  <tr><th>미해결 항목</th><td>{{UNRESOLVED_ITEMS}}</td></tr>
+  <tr><th>금지된 추론</th><td>{{PROHIBITED_INFERENCES}}</td></tr>
+</table>
+
+<!-- 2 ─────────────────────────────────────────────────────────── -->
+<h2>2. Executive Summary</h2>
+<div class="grid">
+  <div class="kpi"><div class="k">종합점수</div><div class="v">{{COMPOSITE_SCORE}}</div></div>
+  <div class="kpi"><div class="k">판단 신뢰도</div><div class="v">{{COMPOSITE_CONFIDENCE}}</div></div>
+  <div class="kpi"><div class="k">데이터 완전성</div><div class="v">{{DATA_COMPLETENESS}}</div></div>
+  <div class="kpi"><div class="k">종합 의견</div><div class="v">{{VERDICT}}</div></div>
+</div>
+<table>
+  <tr><th>가장 강한 모듈</th><td>{{STRONGEST_MODULE}}</td></tr>
+  <tr><th>가장 약한 모듈</th><td>{{WEAKEST_MODULE}}</td></tr>
+</table>
+
+<h3>핵심 투자포인트 3</h3>
+<ul>
+  <!-- {{#each KEY_POINTS}} --><li>{{POINT}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} -->
+</ul>
+
+<h3>핵심 위험 3</h3>
+<ul>
+  <!-- {{#each KEY_RISKS}} --><li>{{RISK}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} -->
+</ul>
+
+<h3>판단을 바꿀 조건</h3>
+<ul>
+  <!-- {{#each INVALIDATING_CONDITIONS}} --><li>{{CONDITION}}</li><!-- {{/each}} -->
+</ul>
+
+<!-- 3~5 ───────────────────────────────────────────────────────── -->
+<h2>3. 기업 한 줄 정의</h2>
+<p class="fact">{{ONE_LINER}} <span class="eid">{{EVIDENCE_IDS}}</span></p>
+
+<h2>4. 기업 개요</h2>
+{{COMPANY_OVERVIEW}}
+
+<h2>5. 사업구조와 수익모델</h2>
+{{BUSINESS_STRUCTURE}}
+<p class="src">
+  ※ 사업부문별 매출·생산능력·가동률·원재료·수주잔고는 <strong>구조화된 공식 API 가 존재하지
+  않는다</strong>. 사업보고서 원문(<code>document.xml</code>) 텍스트로만 확인 가능하며,
+  원문을 수집하지 않은 경우 <span class="na">N/A</span> 다.
+</p>
+
+<!-- 6~12 모듈 ─────────────────────────────────────────────────── -->
+<!-- {{#each MODULES}}  (순서: quality, growth, moat, valuation, trend, catalyst, risk) -->
+<h2>{{SECTION_NO}}. {{MODULE_TITLE}}</h2>
+<div class="grid">
+  <div class="kpi"><div class="k">점수</div><div class="v">{{MODULE_SCORE}}</div></div>
+  <div class="kpi"><div class="k">신뢰도</div><div class="v">{{MODULE_CONFIDENCE}}</div></div>
+  <div class="kpi"><div class="k">데이터 확보율</div><div class="v">{{MODULE_COVERAGE}}</div></div>
+  <div class="kpi"><div class="k">가중치</div><div class="v">{{MODULE_WEIGHT}}</div></div>
+</div>
+
+<table>
+  <thead><tr><th>기준</th><th>지표</th><th class="num">값</th><th>등급</th><th>근거</th></tr></thead>
+  <tbody>
+  <!-- {{#each CRITERIA}} -->
+  <tr>
+    <td>{{CRITERION_NAME}}</td>
+    <td>{{METRIC}}</td>
+    <td class="num">{{METRIC_VALUE}} <span class="src">{{SOURCE_AND_DATE}}</span></td>
+    <td>{{LEVEL_OR_NA}}</td>
+    <td><span class="eid">{{EVIDENCE_IDS}}</span></td>
+  </tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+<p class="src">N/A 항목은 점수에서 <strong>제외</strong>되었으며 0점으로 채점되지 않았다.</p>
+
+{{MODULE_VERDICT}}
+
+<h3>강점</h3>
+<ul><!-- {{#each STRENGTHS}} --><li>{{POINT}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} --></ul>
+<h3>약점</h3>
+<ul><!-- {{#each WEAKNESSES}} --><li>{{POINT}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} --></ul>
+<h3>상충 근거</h3>
+<ul><!-- {{#each COUNTER_EVIDENCE}} --><li>{{POINT}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} --></ul>
+<!-- {{/each}} -->
+
+<!-- 13 ────────────────────────────────────────────────────────── -->
+<h2>13. 긍정·기준·부정 시나리오</h2>
+<table>
+  <thead><tr><th>시나리오</th><th>전제 조건</th><th>재무적 경로</th><th>확인 지표</th></tr></thead>
+  <tbody>
+    <tr><td>긍정</td><td class="fcast">{{BULL_PREMISE}}</td><td>{{BULL_PATH}}</td><td>{{BULL_INDICATOR}}</td></tr>
+    <tr><td>기준</td><td class="fcast">{{BASE_PREMISE}}</td><td>{{BASE_PATH}}</td><td>{{BASE_INDICATOR}}</td></tr>
+    <tr><td>부정</td><td class="fcast">{{BEAR_PREMISE}}</td><td>{{BEAR_PATH}}</td><td>{{BEAR_INDICATOR}}</td></tr>
+  </tbody>
+</table>
+<p class="src">전망은 <strong>조건부 문장</strong>으로만 서술한다. 목표주가를 산출하지 않는다.</p>
+
+<h2>14. 투자 논리 훼손 조건</h2>
+<ul><!-- {{#each INVALIDATING}} --><li>{{CONDITION}} <span class="eid">{{EVIDENCE_IDS}}</span></li><!-- {{/each}} --></ul>
+
+<h2>15. 향후 모니터링 지표</h2>
+<table>
+  <thead><tr><th>지표</th><th>현재값</th><th>확인 주기</th><th>임계 신호</th></tr></thead>
+  <tbody>
+  <!-- {{#each MONITORING}} -->
+    <tr><td>{{NAME}}</td><td class="num">{{VALUE}} <span class="src">{{SOURCE_AND_DATE}}</span></td>
+        <td>{{CADENCE}}</td><td>{{THRESHOLD}}</td></tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+
+<h2>16. 종합 평가</h2>
+<p><span class="verdict">{{VERDICT}}</span></p>
+<p class="interp">{{VERDICT_REASON}}</p>
+<table>
+  <thead><tr><th>모듈</th><th class="num">점수</th><th class="num">가중치</th>
+             <th class="num">신뢰도</th><th class="num">확보율</th><th>종합 반영</th></tr></thead>
+  <tbody>
+  <!-- {{#each MODULE_SUMMARY}} -->
+    <tr><td>{{MODULE}}</td><td class="num">{{SCORE}}</td><td class="num">{{WEIGHT}}</td>
+        <td class="num">{{CONFIDENCE}}</td><td class="num">{{COVERAGE}}</td>
+        <td>{{COUNTED}}</td></tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+<p class="src">
+  종합점수 = Σ(모듈점수 × 재정규화가중치) / 100 — <strong>Python 이 계산</strong>했다.
+  {{RENORMALIZED_NOTE}}
+</p>
+
+<!-- 17~20 ─────────────────────────────────────────────────────── -->
+<h2>17. 데이터 한계</h2>
+<ul><!-- {{#each DATA_LIMITATIONS}} --><li>{{LIMITATION}}</li><!-- {{/each}} --></ul>
+
+<h3>공식 경로가 없어 제공하지 않는 항목 (unsupported)</h3>
+<ul><!-- {{#each UNSUPPORTED}} --><li>{{ITEM}}</li><!-- {{/each}} --></ul>
+
+<h2>18. 출처와 기준일</h2>
+<table>
+  <thead><tr><th>제공자</th><th>출처 유형</th><th>엔드포인트</th><th>접수번호</th><th>수집 시각</th><th class="num">건수</th></tr></thead>
+  <tbody>
+  <!-- {{#each SOURCES}} -->
+    <tr><td>{{PROVIDER}}</td><td>{{SOURCE_TYPE}}</td><td>{{ENDPOINT}}</td>
+        <td>{{RCEPT_NO_LINK}}</td><td>{{RETRIEVED_AT}}</td><td class="num">{{COUNT}}</td></tr>
+  <!-- {{/each}} -->
+  </tbody>
+</table>
+<p class="src">
+  <code>unofficial_wrapper</code> = pykrx (KRX·Naver 와 무관한 비공식 3rd-party 래퍼).
+  <code>derived_calculation</code> = 위 출처들로부터 계산된 파생값 (계산식은 evidence 에 기록).
+</p>
+
+<h2>19. 검증 결과</h2>
+<table>
+  <thead><tr><th>게이트</th><th>결과</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td>Gate 1 — Identity</td><td class="{{G1_CLASS}}">{{G1_STATUS}}</td><td>{{G1_NOTE}}</td></tr>
+    <tr><td>Gate 2 — Data</td><td class="{{G2_CLASS}}">{{G2_STATUS}}</td><td>{{G2_NOTE}}</td></tr>
+    <tr><td>Gate 3 — Analysis</td><td class="{{G3_CLASS}}">{{G3_STATUS}}</td><td>{{G3_NOTE}}</td></tr>
+    <tr><td>Gate 4 — Report</td><td class="{{G4_CLASS}}">{{G4_STATUS}}</td><td>{{G4_NOTE}}</td></tr>
+  </tbody>
+</table>
+<p class="src">주장 {{CLAIM_COUNT}}건 검증 — 근거 없는 주장은 보고서에서 제거되었다.</p>
+
+<h2>20. 면책 문구</h2>
+<footer>
+  <p><strong>본 보고서는 투자 자문이 아닙니다.</strong> 교육·연구 목적의 자동 생성 예제이며,
+  특정 종목의 매수·매도를 권유하지 않습니다.</p>
+  <p>모든 수치는 공시·시세 원자료에서 기계적으로 수집·계산되었으며, 오류가 있을 수 있습니다.
+  투자 판단과 그 결과에 대한 책임은 전적으로 이용자 본인에게 있습니다.</p>
+  <p>데이터 출처: OpenDART(공식 API·공시원문), pykrx(비공식 래퍼 — KRX/Naver).
+  기준일 {{DATA_CUTOFF}} 이후의 변동은 반영되지 않았습니다.</p>
+</footer>
+
+</main>
+</body>
+</html>

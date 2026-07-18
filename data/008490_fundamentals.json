@@ -1,0 +1,172 @@
+{
+  "stock_code": "008490",
+  "corp_code": "00131692",
+  "fetched_at": "2026-07-11 20:31:23",
+  "source": "DART OpenAPI (fnlttSinglAcnt)",
+  "unit": "KRW (원). EPS는 원/주.",
+  "annual": [
+    {
+      "bsns_year": 2025,
+      "reprt_code": "11011",
+      "reprt_label": "사업보고서",
+      "revenue": {
+        "value": 722308593846,
+        "account_nm": "매출액",
+        "rcept_no": "20260319001055",
+        "basis": "2025 사업보고서"
+      },
+      "operating_income": {
+        "value": 50206468443,
+        "account_nm": "영업이익",
+        "rcept_no": "20260319001055",
+        "basis": "2025 사업보고서"
+      },
+      "eps": {
+        "value": null,
+        "account_nm": null,
+        "rcept_no": null,
+        "basis": "2025 사업보고서"
+      }
+    },
+    {
+      "bsns_year": 2024,
+      "reprt_code": "11011",
+      "reprt_label": "사업보고서",
+      "revenue": {
+        "value": 653264494420,
+        "account_nm": "매출액",
+        "rcept_no": "20250320000847",
+        "basis": "2024 사업보고서"
+      },
+      "operating_income": {
+        "value": 33843445254,
+        "account_nm": "영업이익",
+        "rcept_no": "20250320000847",
+        "basis": "2024 사업보고서"
+      },
+      "eps": {
+        "value": null,
+        "account_nm": null,
+        "rcept_no": null,
+        "basis": "2024 사업보고서"
+      }
+    },
+    {
+      "bsns_year": 2023,
+      "reprt_code": "11011",
+      "reprt_label": "사업보고서",
+      "revenue": {
+        "value": 594567151213,
+        "account_nm": "매출액",
+        "rcept_no": "20240321001350",
+        "basis": "2023 사업보고서"
+      },
+      "operating_income": {
+        "value": 42994972090,
+        "account_nm": "영업이익",
+        "rcept_no": "20240321001350",
+        "basis": "2023 사업보고서"
+      },
+      "eps": {
+        "value": null,
+        "account_nm": null,
+        "rcept_no": null,
+        "basis": "2023 사업보고서"
+      }
+    }
+  ],
+  "quarterly": [
+    {
+      "bsns_year": 2026,
+      "reprt_code": "11013",
+      "reprt_label": "1Q",
+      "revenue": {
+        "value": 201552164261,
+        "account_nm": "매출액",
+        "rcept_no": "20260514001324",
+        "basis": "2026 1Q"
+      },
+      "operating_income": {
+        "value": 21235425836,
+        "account_nm": "영업이익",
+        "rcept_no": "20260514001324",
+        "basis": "2026 1Q"
+      },
+      "eps": {
+        "value": null,
+        "account_nm": null,
+        "rcept_no": null,
+        "basis": "2026 1Q"
+      }
+    },
+    {
+      "bsns_year": 2025,
+      "reprt_code": "11014",
+      "reprt_label": "3Q",
+      "revenue": {
+        "value": 185046455098,
+        "account_nm": "매출액",
+        "rcept_no": "20251113001004",
+        "basis": "2025 3Q"
+      },
+      "operating_income": {
+        "value": 13708884807,
+        "account_nm": "영업이익",
+        "rcept_no": "20251113001004",
+        "basis": "2025 3Q"
+      },
+      "eps": {
+        "value": null,
+        "account_nm": null,
+        "rcept_no": null,
+        "basis": "2025 3Q"
+      }
+    },
+    {
+      "bsns_year": 2025,
+      "reprt_code": "11012",
+      "reprt_label": "HY",
+      "revenue": {
+        "value": 190020810619,
+        "account_nm": "매출액",
+        "rcept_no": "20250814001729",
+        "basis": "2025 HY"
+      },
+      "operating_income": {
+        "value": 20122519215,
+        "account_nm": "영업이익",
+        "rcept_no": "20250814001729",
+        "basis": "2025 HY"
+      },
+      "eps": {
+        "value": null,
+        "account_nm": null,
+        "rcept_no": null,
+        "basis": "2025 HY"
+      }
+    },
+    {
+      "bsns_year": 2025,
+      "reprt_code": "11013",
+      "reprt_label": "1Q",
+      "revenue": {
+        "value": 180841453003,
+        "account_nm": "매출액",
+        "rcept_no": "20250514001130",
+        "basis": "2025 1Q"
+      },
+      "operating_income": {
+        "value": 11554277481,
+        "account_nm": "영업이익",
+        "rcept_no": "20250514001130",
+        "basis": "2025 1Q"
+      },
+      "eps": {
+        "value": null,
+        "account_nm": null,
+        "rcept_no": null,
+        "basis": "2025 1Q"
+      }
+    }
+  ]
+}

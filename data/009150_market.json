@@ -1,0 +1,17 @@
+{
+  "stock_code": "009150",
+  "as_of": "2026-07-10",
+  "fetched_date": "2026-07-11",
+  "source": "pykrx",
+  "current_price": 1584000,
+  "high_52w": 2417000,
+  "pct_from_52w_high": -34.46,
+  "last_volume": 875317,
+  "avg_volume_60d": 1180379,
+  "volume_ratio_vs_60d": 0.742,
+  "inst_net_60d": -1434188538000,
+  "foreign_net_60d": 2272012763500,
+  "inst_foreign_net_60d": 837824225500,
+  "supply_note": null,
+  "trading_days_used": 268
+}

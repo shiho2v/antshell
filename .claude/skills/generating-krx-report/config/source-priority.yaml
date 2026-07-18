@@ -1,0 +1,248 @@
+# source-priority.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# 데이터 항목별 **실재하는** 수집 경로와 우선순위.
+# design-review.md 의 사실검증 결과를 코드가 읽을 수 있는 형태로 고정한 것이다.
+#
+# ⚠️ 이 파일에 없는 엔드포인트/함수는 **존재하지 않는다고 간주**한다.
+#    스크립트는 여기 적힌 것만 호출한다. 이름을 지어내지 않는다.
+#
+# source_type (evidence-item.schema.json 과 동일한 열거값):
+#   official_api        공식 API (DART OpenAPI, KRX Open API)
+#   official_filing     공식 공시 원문 (DART document.xml)
+#   official_download   공식 파일 다운로드
+#   unofficial_wrapper  비공식 래퍼/스크레이퍼 (pykrx → KRX/Naver)
+#   derived_calculation 위 값들로부터 계산된 파생값
+#
+# status:
+#   available            지금 호출 가능
+#   credential_required  자격증명이 있으면 가능
+#   unsupported          **공식 경로가 존재하지 않음. 생성 금지.**
+# ─────────────────────────────────────────────────────────────────────────────
+
+credentials:
+  DART_API_KEY:
+    required: true
+    purpose: DART OpenAPI 전체 (재무·공시·주식총수)
+    obtain: https://opendart.fss.or.kr
+  KRX_ID:
+    required: false
+    purpose: pykrx의 KRX 백엔드 (수급·지수·업종·시가총액·PER 밴드)
+    note: >
+      2026-07 기준 data.krx.co.kr 은 익명 호출에 400 LOGOUT 을 반환한다.
+      즉 KRX 백엔드를 쓰는 pykrx 함수는 사실상 전부 로그인이 필요하다.
+  KRX_PW:
+    required: false
+    purpose: KRX_ID 와 함께 사용
+  KRX_OPEN_API_KEY:
+    required: false
+    purpose: KRX 공식 Open API (openapi.krx.co.kr) — 선택적 공식 경로
+    note: 발급 후 데이터셋별 이용신청·승인이 별도로 필요하다. 승인 전에는 401.
+
+providers:
+
+  dart:
+    display: OpenDART
+    base_url: https://opendart.fss.or.kr/api
+    source_type: official_api
+    error_model: >
+      오류도 HTTP 200 으로 반환된다. 본문 status 필드로 판정할 것.
+      013/014 = 데이터 없음(오류 아님, 0으로 변환 금지). 020 = 요청제한(백오프).
+      010/011/012/101/901 = 하드 오류. 800/900 = 일시적.
+    viewer_url_template: https://dart.fss.or.kr/dsaf001/main.do?rcpNo={rcept_no}
+
+  pykrx:
+    display: pykrx (비공식 래퍼)
+    source_type: unofficial_wrapper
+    underlying_source: KRX / Naver Finance
+    warning: >
+      KRX·Naver 와 무관한 third-party 스크레이퍼다.
+      evidence 에 반드시 provider=pykrx, source_type=unofficial_wrapper 로 기록한다.
+      공식 데이터인 것처럼 표기하지 않는다.
+
+  krx_open_api:
+    display: KRX Open API
+    base_url: https://data-dbg.krx.co.kr/svc/apis
+    source_type: official_api
+    auth: AUTH_KEY HTTP 헤더
+    note: 수급(투자자별 순매수)과 PER/PBR 시계열은 **제공하지 않는다**.
+
+# ─────────────────────────────────────────────────────────────────────────────
+items:
+
+  # ── 식별 ────────────────────────────────────────────────────────────────
+  corp_code:
+    status: available
+    chain:
+      - {provider: dart, endpoint: corpCode.xml, source_type: official_api, note: "ZIP 응답. 로컬 캐시 후 재사용"}
+
+  company_profile:
+    status: available
+    chain:
+      - {provider: dart, endpoint: company.json, source_type: official_api}
+
+  # ── 재무 ────────────────────────────────────────────────────────────────
+  financial_statements:
+    status: available
+    chain:
+      - {provider: dart, endpoint: fnlttSinglAcntAll.json, source_type: official_api,
+         params: "fs_div 필수 (CFS 우선, 없으면 OFS 폴백 — 폴백 사실 기록)",
+         note: "sj_div: BS/IS/CIS/CF/SCE. 행마다 rcept_no 포함"}
+      - {provider: dart, endpoint: fnlttSinglAcnt.json, source_type: official_api,
+         note: "폴백. CFS·OFS 를 섞어서 반환하므로 행의 fs_div 로 반드시 필터링"}
+
+  quarterly_standalone:
+    status: available
+    chain:
+      - {provider: dart, source_type: derived_calculation,
+         note: "분기 단독값은 누적 보고서 차분으로만 파생한다. thstrm_add_amount 를 신뢰하지 않는다.
+                Q1=1Q / Q2=반기−1Q / Q3=3Q누적−반기 / Q4=FY−3Q누적.
+                인접 보고서 결측 시 해당 분기 N/A (0 아님)."}
+
+  financial_indicators:
+    status: available
+    chain:
+      - {provider: dart, endpoint: fnlttSinglIndx.json, source_type: official_api,
+         params: "idx_cl_code: M210000 수익성 / M220000 안정성 / M230000 성장성 / M240000 활동성",
+         note: "교차검증용. 본 스킬의 1차 지표는 자체 계산값이며, 불일치 시 counter_evidence 로 병기"}
+
+  shares_outstanding:
+    status: available
+    chain:
+      - {provider: dart, endpoint: stockTotqySttus.json, source_type: official_api,
+         note: "시가총액 계산의 **공식 주식수 출처**. pykrx 없이도 밸류에이션이 가능해지는 핵심"}
+
+  treasury_stock:
+    status: available
+    chain:
+      - {provider: dart, endpoint: tesstkAcqsDspsSttus.json, source_type: official_api}
+
+  dividends:
+    status: available
+    chain:
+      - {provider: dart, endpoint: alotMatter.json, source_type: official_api,
+         note: "se 항목의 열거값은 미확인. 런타임에 읽어서 처리한다"}
+
+  capital_changes:
+    status: available
+    chain:
+      - {provider: dart, endpoint: irdsSttus.json, source_type: official_api,
+         note: "증자·감자 → 희석 판단 근거"}
+
+  disclosure_events:
+    status: available
+    chain:
+      - {provider: dart, endpoint: list.json, source_type: official_api,
+         note: "촉매 모듈의 유일한 근거. 공시에 없는 촉매는 등재 금지"}
+
+  # ── 시세 ────────────────────────────────────────────────────────────────
+  ohlcv:
+    status: available
+    chain:
+      - {provider: pykrx, function: "get_market_ohlcv(fromdate, todate, ticker)",
+         source_type: unofficial_wrapper, underlying_source: "Naver Finance",
+         note: "adjusted=True(기본) → Naver 경유. **자격증명 없이 동작하는 유일한 시세 경로**"}
+      - {provider: krx_open_api, endpoint: "sto/stk_bydd_trd", source_type: official_api,
+         requires: [KRX_OPEN_API_KEY], note: "공식 경로. 키·이용승인 있을 때만"}
+
+  market_cap:
+    status: available
+    chain:
+      - {provider: dart, source_type: derived_calculation,
+         formula: "close_price × shares_outstanding",
+         note: "**1순위**. 종가(pykrx/Naver) × 발행주식수(DART stockTotqySttus).
+                두 입력의 기준일이 다를 수 있으므로 limitations 에 명시한다"}
+      - {provider: pykrx, function: "get_market_cap", source_type: unofficial_wrapper,
+         requires: [KRX_ID, KRX_PW], note: "교차검증용"}
+
+  krx_published_valuation:
+    status: credential_required
+    requires: [KRX_ID, KRX_PW]
+    chain:
+      - {provider: pykrx, function: "get_market_fundamental", source_type: unofficial_wrapper,
+         note: "KRX 공표 PER/PBR/EPS/BPS/DIV/DPS 의 패스스루.
+                **최근 확정 재무제표 기준이라 분기 갱신이 지연된다.**
+                본문 Trailing PER 로 쓰지 않고 역사적 밴드·교차검증에만 쓴다"}
+
+  investor_flow:
+    status: credential_required
+    requires: [KRX_ID, KRX_PW]
+    used_by: [TRD-I]
+    chain:
+      - {provider: pykrx, function: "get_market_trading_value_by_date",
+         source_type: unofficial_wrapper}
+    on_missing: "CANSLIM I = N/A. **0점으로 채점하지 않는다.**"
+
+  index_ohlcv:
+    status: credential_required
+    requires: [KRX_ID, KRX_PW]
+    used_by: [TRD-M, TRD-L]
+    chain:
+      - {provider: pykrx, function: "get_index_ohlcv", source_type: unofficial_wrapper}
+    on_missing: "CANSLIM M·L = N/A. **0점으로 채점하지 않는다.**"
+
+  sector_classification:
+    status: credential_required
+    requires: [KRX_ID, KRX_PW]
+    chain:
+      - {provider: pykrx, function: "get_market_sector_classifications",
+         source_type: unofficial_wrapper}
+
+  # ── 서술 항목: 구조화 API 없음 ──────────────────────────────────────────
+  segment_revenue:
+    status: unsupported
+    reason: DART에 사업부문별 매출 엔드포인트가 존재하지 않는다.
+    partial_route:
+      - {provider: dart, endpoint: document.xml, source_type: official_filing,
+         note: "사업보고서 원문의 「II. 사업의 내용」 텍스트를 추출해 정성 근거로만 사용.
+                fetch_dart_profile.py --with-document 옵트인.
+                **자동으로 수치를 추출하지 않는다.**"}
+
+  capacity_utilization:
+    status: unsupported
+    reason: 구조화 API 없음. 사업보고서 서술 섹션에만 존재.
+    partial_route:
+      - {provider: dart, endpoint: document.xml, source_type: official_filing,
+         note: "segment_revenue 와 동일하게 --with-document 옵트인 텍스트 추출로만 접근"}
+
+  raw_materials:
+    status: unsupported
+    reason: 구조화 API 없음.
+
+  order_backlog:
+    status: unsupported
+    reason: 구조화 API 없음.
+
+  rnd_expense:
+    status: unsupported
+    reason: >
+      전용 엔드포인트 없음. 일부 기업은 fnlttSinglAcntAll 에 '경상연구개발비' 계정으로
+      나타날 수 있으나 **보장되지 않는다**. 발견되면 official_api 로, 없으면 N/A.
+    opportunistic:
+      - {provider: dart, endpoint: fnlttSinglAcntAll.json, account_nm_keywords: ["경상연구개발비", "연구개발비"]}
+
+  market_share:
+    status: unsupported
+    reason: 공시에 없다. **추정 금지.**
+
+  # ── 존재하지 않는 데이터 ────────────────────────────────────────────────
+  analyst_consensus:
+    status: unsupported
+    reason: 무료 공식 API가 존재하지 않는다. FnGuide·Naver 는 스크레이핑이며 재배포 금지.
+    hard_rule: consensus_allowed 가 true 여도 **데이터 출처가 없으므로 생성하지 않는다.**
+
+  forward_eps:
+    status: unsupported
+    reason: 위와 동일.
+    hard_rule: "**Forward PER 계산 금지.** 검증된 Forward EPS가 존재하지 않는다."
+
+  target_price:
+    status: unsupported
+    reason: 위와 동일.
+    hard_rule: "**목표주가를 만들지 않는다.** 사용자가 요청해도 근거 부재를 고지한다."
+
+  peer_group:
+    status: unsupported
+    reason: >
+      자동 선정 규칙이 존재하지 않는다. 사용자가 peer_comparison.selection_rule 을
+      명시하거나 비교기업을 직접 지정한 경우에만 비교를 수행한다.
+    hard_rule: 경쟁사를 임의로 선택하지 않는다.

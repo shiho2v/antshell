@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "report-manifest.schema.json",
+  "title": "Report Manifest",
+  "description": "최종 보고서의 기계 판독 가능한 원장. 보고서 HTML 의 모든 수치·주장은 이 manifest 에서 재현 가능해야 한다 (Gate 4). 합성 단계에서 Claude 는 raw JSON 대신 이 manifest 와 module-result 만 읽는다.",
+  "type": "object",
+  "required": [
+    "ticker",
+    "company_name",
+    "analysis_mode",
+    "request_type",
+    "generated_at",
+    "composite",
+    "modules",
+    "claims",
+    "gates",
+    "data_limitations"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "ticker": {"type": "string", "pattern": "^[0-9]{6}$"},
+    "company_name": {"type": "string"},
+    "market": {"type": ["string", "null"]},
+    "corp_code": {"type": ["string", "null"]},
+    "analysis_mode": {"type": "string"},
+    "request_type": {"type": "string"},
+    "data_cutoff": {"type": ["string", "null"]},
+    "generated_at": {"type": "string"},
+
+    "composite": {
+      "type": "object",
+      "required": ["score", "confidence", "data_completeness", "verdict"],
+      "additionalProperties": false,
+      "properties": {
+        "score": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100,
+          "description": "score_modules.py 가 계산한 가중 종합점수. **LLM 이 계산하지 않는다.**"
+        },
+        "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "data_completeness": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "verdict": {
+          "type": "string",
+          "enum": ["긍정적 관찰", "중립적 관찰", "보수적 관찰", "판단 유보"],
+          "description": "매수·매도 표현 금지."
+        },
+        "verdict_reason": {"type": "string"},
+        "weights_used": {
+          "type": "object",
+          "additionalProperties": {"type": "number"},
+          "description": "재정규화 후 실제 적용된 가중치. 합 100."
+        },
+        "renormalized": {
+          "type": "boolean",
+          "description": "일부 모듈만 실행되어 가중치를 재정규화했는지 여부. true 이면 보고서에 명시한다."
+        },
+        "formula": {"type": "string"},
+        "strongest_module": {"type": ["string", "null"]},
+        "weakest_module": {"type": ["string", "null"]},
+        "unscored_modules": {
+          "type": "array",
+          "items": {"type": "string"},
+          "description": "데이터·판단 부재로 채점되지 않아 종합점수에서 제외된 모듈. 보고서에 반드시 노출한다."
+        }
+      }
+    },
+
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["module", "score", "confidence", "evidence_coverage", "status"],
+        "properties": {
+          "module": {"type": "string"},
+          "score": {"type": ["number", "null"]},
+          "confidence": {"type": ["number", "null"]},
+          "evidence_coverage": {"type": ["number", "null"]},
+          "status": {"type": "string"},
+          "weight": {"type": ["number", "null"]},
+          "counted_in_composite": {"type": "boolean"}
+        }
+      }
+    },
+
+    "claims": {
+      "type": "array",
+      "description": "보고서의 모든 핵심 주장. 근거 없는 주장은 최종 보고서에서 제거된다 (Phase 8).",
+      "items": {
+        "type": "object",
+        "required": ["claim_id", "claim", "claim_type", "evidence_ids", "confidence", "validation"],
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": {"type": "string", "pattern": "^CLM-[0-9]{4}$"},
+          "claim": {"type": "string"},
+          "claim_type": {
+            "type": "string",
+            "enum": ["fact", "derived_interpretation", "conditional_view", "unknown"],
+            "description": "fact=최소 1개 직접 근거. derived_interpretation=최소 2개. conditional_view=조건부 문장으로만."
+          },
+          "module": {"type": ["string", "null"]},
+          "evidence_ids": {"type": "array", "items": {"type": "string"}},
+          "counter_evidence_ids": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "상충 근거를 숨기지 않는다."
+          },
+          "causal_path": {
+            "type": ["string", "null"],
+            "description": "인과 주장이면 연결 경로를 명시한다. 상관을 인과로 단정하지 않는다."
+          },
+          "confidence": {"type": "string", "enum": ["high", "medium", "low"]},
+          "validation": {"type": "string", "enum": ["pending", "passed", "failed"]},
+          "validation_errors": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+
+    "gates": {
+      "type": "object",
+      "required": ["identity", "data", "analysis", "report"],
+      "description": "4개 게이트 전부 passed 여야 최종 보고서를 생성한다. 하나라도 failed 이면 검증 실패 보고서를 생성한다.",
+      "additionalProperties": false,
+      "properties": {
+        "identity": {"$ref": "#/$defs/gate"},
+        "data": {"$ref": "#/$defs/gate"},
+        "analysis": {"$ref": "#/$defs/gate"},
+        "report": {"$ref": "#/$defs/gate"}
+      }
+    },
+
+    "data_limitations": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "unsupported 항목, 자격증명 부재로 N/A 가 된 항목, 폴백 적용 사실 등."
+    },
+
+    "unsupported_items": {"type": "array", "items": {"type": "string"}},
+
+    "sources": {
+      "type": "array",
+      "description": "출처와 기준일 목록 (보고서 18장).",
+      "items": {
+        "type": "object",
+        "required": ["provider", "source_type"],
+        "properties": {
+          "provider": {"type": "string"},
+          "source_type": {"type": "string"},
+          "underlying_source": {"type": ["string", "null"]},
+          "endpoint_or_function": {"type": ["string", "null"]},
+          "rcept_no": {"type": ["string", "null"]},
+          "url_or_identifier": {"type": ["string", "null"]},
+          "retrieved_at": {"type": ["string", "null"]},
+          "evidence_count": {"type": "integer"}
+        }
+      }
+    },
+
+    "output_path": {"type": ["string", "null"]},
+    "previous_manifest": {
+      "type": ["string", "null"],
+      "description": "업데이트 보고서일 때 직전 manifest 경로. 변경 감지의 기준."
+    },
+    "changed_modules": {
+      "type": "array",
+      "items": {"type": "string"},
+      "description": "업데이트 보고서에서 실제 재실행된 모듈."
+    }
+  },
+
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "required": ["status", "checks"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"type": "string", "enum": ["pending", "passed", "failed"]},
+        "checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["check", "result"],
+            "properties": {
+              "check": {"type": "string"},
+              "result": {"type": "string", "enum": ["pass", "fail", "warn", "skip"]},
+              "detail": {"type": ["string", "null"]}
+            }
+          }
+        }
+      }
+    }
+  }
+}

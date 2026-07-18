@@ -1,0 +1,17 @@
+{
+  "stock_code": "008490",
+  "as_of": "2026-07-10",
+  "fetched_date": "2026-07-11",
+  "source": "pykrx",
+  "current_price": 19800,
+  "high_52w": 32600,
+  "pct_from_52w_high": -39.26,
+  "last_volume": 10131,
+  "avg_volume_60d": 44765,
+  "volume_ratio_vs_60d": 0.226,
+  "inst_net_60d": 2019432280,
+  "foreign_net_60d": -2147488225,
+  "inst_foreign_net_60d": -128055945,
+  "supply_note": null,
+  "trading_days_used": 268
+}

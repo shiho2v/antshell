@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/notion_sync.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/notion_sync.py\""
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/auto_header.py",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/auto_header.py\"",
             "statusMessage": "헤더 주석 자동 삽입 중..."
           }
         ]
@@ -27,7 +27,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/commit_format.py"
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/commit_format.py\""
           }
         ]
       }

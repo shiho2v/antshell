@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SK하이닉스(000660) 뉴스·재무 요약</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1e27; --fg:#e6e9ef; --muted:#9aa4b2;
+          --accent:#4f8cff; --good:#38c172; --warn:#f6c343; --bad:#ef5753;
+          --border:#2a303c; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font-family:-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+         line-height:1.6; padding:24px; }
+  .wrap { max-width:860px; margin:0 auto; }
+  header { border-bottom:2px solid var(--border); padding-bottom:16px;
+           margin-bottom:24px; }
+  h1 { margin:0 0 4px; font-size:1.6rem; }
+  .sub { color:var(--muted); font-size:.9rem; }
+  .disclaimer { background:#2a2010; border:1px solid var(--warn);
+                color:#f6c343; padding:12px 16px; border-radius:8px;
+                font-size:.85rem; margin:16px 0; }
+  table { width:100%; border-collapse:collapse; margin:16px 0;
+          background:var(--card); border-radius:8px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); }
+  th { background:#222735; color:var(--muted); font-weight:600; font-size:.85rem; }
+  td.num { font-weight:700; font-family: "Consolas", monospace; }
+  .card { background:var(--card); border:1px solid var(--border);
+          border-radius:8px; padding:16px 20px; margin:16px 0; }
+  .card h3 { margin-top:0; }
+  .news-item { border-bottom:1px solid var(--border); padding:14px 0; }
+  .news-item:last-child { border-bottom:none; }
+  .news-item h4 { margin:0 0 6px; font-size:1rem; }
+  .news-item h4 a { color:var(--fg); text-decoration:none; }
+  .news-item h4 a:hover { color:var(--accent); text-decoration:underline; }
+  .news-meta { color:var(--muted); font-size:.78rem; margin-bottom:6px; }
+  .news-summary { font-size:.92rem; }
+  .section-title { font-size:1.1rem; margin:28px 0 8px; color:var(--accent); }
+  footer { margin-top:32px; color:var(--muted); font-size:.8rem;
+           border-top:1px solid var(--border); padding-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>SK하이닉스 <span class="sub">(000660)</span></h1>
+    <div class="sub">뉴스·재무 요약 · news-collector + financial-data 서브에이전트 병렬 오케스트레이션 POC · 생성일 2026-07-18</div>
+  </header>
+
+  <div class="disclaimer">
+    ⚠️ 본 페이지는 <b>Claude Code 서브에이전트 병렬 실행 학습용 POC 산출물</b>이며 <b>투자 자문이 아닙니다</b>.
+    뉴스·재무 수치는 서브에이전트의 웹 검색 결과를 그대로 인용한 것으로, 별도 검증 게이트를 거치지 않았습니다.
+  </div>
+
+  <div class="section-title">재무 데이터 요약</div>
+  <table>
+    <thead>
+      <tr><th>항목</th><th>값</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>현재가</td><td class="num">1,842,000원</td></tr>
+      <tr><td>기준 분기</td><td class="num">2026 Q1</td></tr>
+      <tr><td>매출 (억원)</td><td class="num">525,763</td></tr>
+      <tr><td>영업이익 (억원)</td><td class="num">376,103</td></tr>
+      <tr><td>PER</td><td class="num">37.70</td></tr>
+      <tr><td>PBR</td><td class="num">12.70</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">최근 뉴스 (5건)</div>
+
+  <div class="card">
+    <div class="news-item">
+      <h4><a href="https://www.bloomberg.com/news/articles/2026-07-10/sk-hynix-indicated-to-climb-17-after-26-5-billion-adr-offering" target="_blank" rel="noopener">SK Hynix ADR Stock (SKHYV) Rises After $26.5 Billion US Listing</a></h4>
+      <div class="news-meta">2026-07-10 · Bloomberg</div>
+      <div class="news-summary">SK하이닉스가 나스닥에 ADR을 상장하며 1,779만 주를 주당 149달러에 공모해 265억 달러를 조달했다. 첫 거래일 주가는 13% 상승하며 외국 기업 최대 규모 IPO 기록을 세웠다.</div>
+    </div>
+    <div class="news-item">
+      <h4><a href="https://www.bloomberg.com/news/articles/2026-07-13/sk-hynix-shares-drop-in-seoul-after-much-hyped-us-trading-debut" target="_blank" rel="noopener">SK Hynix ADRs Tumble in Second Trading Day After Korea Selloff</a></h4>
+      <div class="news-meta">2026-07-13 · Bloomberg</div>
+      <div class="news-summary">한국 증시 급락 여파가 미국 시장까지 번지면서 SK하이닉스 ADR이 9.3% 하락했다. AI 관련주 랠리가 과열됐다는 투자자 우려가 커지고 있다.</div>
+    </div>
+    <div class="news-item">
+      <h4><a href="https://www.cnbc.com/2026/07/14/sk-hynix-options-begin-trading-but-another-group-of-stocks-is-stealing-its-thunder.html" target="_blank" rel="noopener">SK Hynix options begin trading. But another group of stocks is stealing its thunder</a></h4>
+      <div class="news-meta">2026-07-14 · CNBC</div>
+      <div class="news-summary">SK하이닉스 옵션 거래가 시작돼 첫날 약 15만 계약이 체결됐으며, 콜 매도가 가장 인기 있는 거래로 나타났다. 다수의 레버리지 단일종목 ETF도 같은 날 상장됐다.</div>
+    </div>
+    <div class="news-item">
+      <h4><a href="https://stockstotrade.com/news/sk-hynix-inc-skhy-news-2026_07_14/" target="_blank" rel="noopener">SKHY Soars On $26.5B Nasdaq IPO, Then Turns Volatile</a></h4>
+      <div class="news-meta">2026-07-14 · StocksToTrade</div>
+      <div class="news-summary">SK하이닉스 나스닥 상장 이후 주가 변동성이 커지고 있다는 분석이 나왔다. IPO 초기 급등 후 조정 국면에 대한 투자자들의 경계감이 반영됐다.</div>
+    </div>
+    <div class="news-item">
+      <h4><a href="https://www.stocktitan.net/sec-filings/SKHY/6-k-sk-hynix-inc-current-report-foreign-issuer-8d6125391e86.html" target="_blank" rel="noopener">SK hynix (SKHY) sets July 29, 2026 Q2 earnings conference call</a></h4>
+      <div class="news-meta">2026-07-15 · StockTitan</div>
+      <div class="news-summary">SK하이닉스가 2026년 2분기 실적발표 컨퍼런스콜을 7월 29일 오전 9시(서울시간)에 개최한다고 공시했다.</div>
+    </div>
+  </div>
+
+  <footer>
+    데이터 출처: news-collector / financial-data 서브에이전트 병렬 호출 결과 (data/000660_agents.json) ·
+    news-collector / financial-data 서브에이전트를 단일 메시지에서 병렬 호출해 수집.
+  </footer>
+</div>
+</body>
+</html>

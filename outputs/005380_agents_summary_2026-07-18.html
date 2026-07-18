@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>현대차(005380) 뉴스·재무 요약</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1e27; --fg:#e6e9ef; --muted:#9aa4b2;
+          --accent:#4f8cff; --good:#38c172; --warn:#f6c343; --bad:#ef5753;
+          --border:#2a303c; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font-family:-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+         line-height:1.6; padding:24px; }
+  .wrap { max-width:860px; margin:0 auto; }
+  header { border-bottom:2px solid var(--border); padding-bottom:16px;
+           margin-bottom:24px; }
+  h1 { margin:0 0 4px; font-size:1.6rem; }
+  .sub { color:var(--muted); font-size:.9rem; }
+  .disclaimer { background:#2a2010; border:1px solid var(--warn);
+                color:#f6c343; padding:12px 16px; border-radius:8px;
+                font-size:.85rem; margin:16px 0; }
+  table { width:100%; border-collapse:collapse; margin:16px 0;
+          background:var(--card); border-radius:8px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); }
+  th { background:#222735; color:var(--muted); font-weight:600; font-size:.85rem; }
+  td.num { font-weight:700; font-family: "Consolas", monospace; }
+  .card { background:var(--card); border:1px solid var(--border);
+          border-radius:8px; padding:16px 20px; margin:16px 0; }
+  .card h3 { margin-top:0; }
+  .news-item { border-bottom:1px solid var(--border); padding:14px 0; }
+  .news-item:last-child { border-bottom:none; }
+  .news-item h4 { margin:0 0 6px; font-size:1rem; }
+  .news-meta { color:var(--muted); font-size:.78rem; margin-bottom:6px; }
+  .news-summary { font-size:.92rem; }
+  .section-title { font-size:1.1rem; margin:28px 0 8px; color:var(--accent); }
+  footer { margin-top:32px; color:var(--muted); font-size:.8rem;
+           border-top:1px solid var(--border); padding-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>현대차 <span class="sub">(005380)</span></h1>
+    <div class="sub">뉴스·재무 요약 · news-collector + financial-data 서브에이전트 병렬 오케스트레이션 POC · 생성일 2026-07-18</div>
+  </header>
+
+  <div class="disclaimer">
+    ⚠️ 본 페이지는 <b>Claude Code 서브에이전트 병렬 실행 학습용 POC 산출물</b>이며 <b>투자 자문이 아닙니다</b>.
+    뉴스·재무 수치는 서브에이전트의 웹 검색 결과를 그대로 인용한 것으로, 별도 검증 게이트를 거치지 않았습니다.
+  </div>
+
+  <div class="section-title">재무 데이터 요약</div>
+  <table>
+    <thead>
+      <tr><th>항목</th><th>값</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>현재가</td><td class="num">593,500원</td></tr>
+      <tr><td>기준 분기</td><td class="num">2026 Q1</td></tr>
+      <tr><td>매출 (억원)</td><td class="num">459,389</td></tr>
+      <tr><td>영업이익 (억원)</td><td class="num">25,147</td></tr>
+      <tr><td>PER</td><td class="num">16.07</td></tr>
+      <tr><td>PBR</td><td class="num">1.16</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">최근 뉴스 (4건)</div>
+
+  <div class="card">
+    <div class="news-item">
+      <h4>현대차(005380) 둔화에서 회복, 기대에서 현실화</h4>
+      <div class="news-meta">2026-07-06 · 본드웹(bondweb.co.kr) 기업분석</div>
+      <div class="news-summary">2분기 실적을 앞두고 현대차의 실적 사이클이 둔화 국면에서 회복 국면으로 전환될 것이라는 분석이 제시됐다. 7월 23일 예정된 2분기 실적 발표가 주가 방향성의 분기점이 될 것으로 전망된다.</div>
+    </div>
+    <div class="news-item">
+      <h4>현대차 주가 전망 2026년 7월, 45만원대 지금 사도 될까</h4>
+      <div class="news-meta">2026-07 (중순) · 불스토리(bullstory.io)</div>
+      <div class="news-summary">현대차 주가가 40만원대로 조정된 가운데 저가 매수 시점 여부를 분석했다. 미국 관세 처리와 보스턴다이내믹스 IPO 일정 등 불확실성 해소가 반등의 전제조건으로 꼽혔다.</div>
+    </div>
+    <div class="news-item">
+      <h4>현대차 주가 전망 2026년 7월, 관세와 목표주가 분석</h4>
+      <div class="news-meta">2026-07 (중순) · 불스토리(bullstory.io)</div>
+      <div class="news-summary">증권사 12개월 평균 목표주가는 748,755원으로 현재가 대비 상승 여력이 있다고 분석됐으며, 26명의 애널리스트가 매수 의견을 제시했다. 미국 대미 관세 불확실성이 여전히 주가 발목을 잡는 핵심 변수로 지목됐다.</div>
+    </div>
+    <div class="news-item">
+      <h4>"옵션 하나 넣었더니 4개월"... 7월, 가장 빨리 출고되는 현대차는?</h4>
+      <div class="news-meta">2026-07 (초중순) · 오토트리뷴</div>
+      <div class="news-summary">현대차가 2026년 7월 국내 승용 전 차종 납기 정보를 공개했으며, 8월 3~8일 공장 하계휴무 반영으로 기존 대비 납기가 1주 늘어났다. 아반떼는 즉시 출고 가능한 반면 쏘나타 하이브리드는 2개월 대기가 필요하다.</div>
+    </div>
+  </div>
+
+  <footer>
+    데이터 출처: news-collector / financial-data 서브에이전트 병렬 호출 결과 (data/005380_agents.json) ·
+    news-collector / financial-data 서브에이전트를 단일 메시지에서 병렬 호출해 수집.
+  </footer>
+</div>
+</body>
+</html>

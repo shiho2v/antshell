@@ -1,0 +1,50 @@
+{
+  "ticker": "000660",
+  "name": "SK하이닉스",
+  "news": [
+    {
+      "title": "SK Hynix ADR Stock (SKHYV) Rises After $26.5 Billion US Listing",
+      "date": "2026-07-10",
+      "source": "Bloomberg",
+      "summary": "SK하이닉스가 나스닥에 ADR을 상장하며 1,779만 주를 주당 149달러에 공모해 265억 달러를 조달했다. 첫 거래일 주가는 13% 상승하며 외국 기업 최대 규모 IPO 기록을 세웠다.",
+      "url": "https://www.bloomberg.com/news/articles/2026-07-10/sk-hynix-indicated-to-climb-17-after-26-5-billion-adr-offering"
+    },
+    {
+      "title": "SK Hynix ADRs Tumble in Second Trading Day After Korea Selloff",
+      "date": "2026-07-13",
+      "source": "Bloomberg",
+      "summary": "한국 증시 급락 여파가 미국 시장까지 번지면서 SK하이닉스 ADR이 9.3% 하락했다. AI 관련주 랠리가 과열됐다는 투자자 우려가 커지고 있다.",
+      "url": "https://www.bloomberg.com/news/articles/2026-07-13/sk-hynix-shares-drop-in-seoul-after-much-hyped-us-trading-debut"
+    },
+    {
+      "title": "SK Hynix options begin trading. But another group of stocks is stealing its thunder",
+      "date": "2026-07-14",
+      "source": "CNBC",
+      "summary": "SK하이닉스 옵션 거래가 시작돼 첫날 약 15만 계약이 체결됐으며, 콜 매도가 가장 인기 있는 거래로 나타났다. 다수의 레버리지 단일종목 ETF도 같은 날 상장됐다.",
+      "url": "https://www.cnbc.com/2026/07/14/sk-hynix-options-begin-trading-but-another-group-of-stocks-is-stealing-its-thunder.html"
+    },
+    {
+      "title": "SKHY Soars On $26.5B Nasdaq IPO, Then Turns Volatile",
+      "date": "2026-07-14",
+      "source": "StocksToTrade",
+      "summary": "SK하이닉스 나스닥 상장 이후 주가 변동성이 커지고 있다는 분석이 나왔다. IPO 초기 급등 후 조정 국면에 대한 투자자들의 경계감이 반영됐다.",
+      "url": "https://stockstotrade.com/news/sk-hynix-inc-skhy-news-2026_07_14/"
+    },
+    {
+      "title": "SK hynix (SKHY) sets July 29, 2026 Q2 earnings conference call",
+      "date": "2026-07-15",
+      "source": "StockTitan",
+      "summary": "SK하이닉스가 2026년 2분기 실적발표 컨퍼런스콜을 7월 29일 오전 9시(서울시간)에 개최한다고 공시했다.",
+      "url": "https://www.stocktitan.net/sec-filings/SKHY/6-k-sk-hynix-inc-current-report-foreign-issuer-8d6125391e86.html"
+    }
+  ],
+  "financials": {
+    "price": 1842000,
+    "quarter": "2026 Q1",
+    "revenue": 525763,
+    "operatingIncome": 376103,
+    "per": 37.7,
+    "pbr": 12.7,
+    "unit": "억원 (매출/영업이익), 원 (현재가)"
+  }
+}

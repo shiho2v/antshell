@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼성전자(005930) 뉴스·재무 요약</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1e27; --fg:#e6e9ef; --muted:#9aa4b2;
+          --accent:#4f8cff; --good:#38c172; --warn:#f6c343; --bad:#ef5753;
+          --border:#2a303c; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font-family:-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+         line-height:1.6; padding:24px; }
+  .wrap { max-width:860px; margin:0 auto; }
+  header { border-bottom:2px solid var(--border); padding-bottom:16px;
+           margin-bottom:24px; }
+  h1 { margin:0 0 4px; font-size:1.6rem; }
+  .sub { color:var(--muted); font-size:.9rem; }
+  .disclaimer { background:#2a2010; border:1px solid var(--warn);
+                color:#f6c343; padding:12px 16px; border-radius:8px;
+                font-size:.85rem; margin:16px 0; }
+  table { width:100%; border-collapse:collapse; margin:16px 0;
+          background:var(--card); border-radius:8px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); }
+  th { background:#222735; color:var(--muted); font-weight:600; font-size:.85rem; }
+  td.num { font-weight:700; font-family: "Consolas", monospace; }
+  .card { background:var(--card); border:1px solid var(--border);
+          border-radius:8px; padding:16px 20px; margin:16px 0; }
+  .card h3 { margin-top:0; }
+  .news-item { border-bottom:1px solid var(--border); padding:14px 0; }
+  .news-item:last-child { border-bottom:none; }
+  .news-item h4 { margin:0 0 6px; font-size:1rem; }
+  .news-meta { color:var(--muted); font-size:.78rem; margin-bottom:6px; }
+  .news-summary { font-size:.92rem; }
+  .section-title { font-size:1.1rem; margin:28px 0 8px; color:var(--accent); }
+  footer { margin-top:32px; color:var(--muted); font-size:.8rem;
+           border-top:1px solid var(--border); padding-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>삼성전자 <span class="sub">(005930)</span></h1>
+    <div class="sub">뉴스·재무 요약 · news-collector + financial-data 서브에이전트 병렬 오케스트레이션 POC · 생성일 2026-07-18</div>
+  </header>
+
+  <div class="disclaimer">
+    ⚠️ 본 페이지는 <b>Claude Code 서브에이전트 병렬 실행 학습용 POC 산출물</b>이며 <b>투자 자문이 아닙니다</b>.
+    뉴스·재무 수치는 서브에이전트의 웹 검색 결과를 그대로 인용한 것으로, 별도 검증 게이트를 거치지 않았습니다.
+  </div>
+
+  <div class="section-title">재무 데이터 요약</div>
+  <table>
+    <thead>
+      <tr><th>항목</th><th>값</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>현재가</td><td class="num">255,000원</td></tr>
+      <tr><td>기준 분기</td><td class="num">2026 Q1</td></tr>
+      <tr><td>매출 (억원)</td><td class="num">1,339,000</td></tr>
+      <tr><td>영업이익 (억원)</td><td class="num">572,000</td></tr>
+      <tr><td>PER</td><td class="num">21.58</td></tr>
+      <tr><td>PBR</td><td class="num">9.07</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">최근 뉴스 (6건)</div>
+
+  <div class="card">
+    <div class="news-item">
+      <h4>삼성전자, 2분기 영업이익 89.4조원…3분기 연속 역대 최대 실적</h4>
+      <div class="news-meta">2026-07-06 · MBC뉴스</div>
+      <div class="news-summary">삼성전자의 2026년 2분기 매출액은 171조원, 영업이익은 89조4천억원으로 3분기 연속 역대 최대 실적을 기록했다. 반도체 사업(DS부문)이 HBM 및 범용 메모리 수요 급증에 힘입어 영업이익 대부분을 견인했다.</div>
+    </div>
+    <div class="news-item">
+      <h4>삼성전자, 역대급 실적에도 '주가 폭락'...원인은?</h4>
+      <div class="news-meta">2026-07-07 · YTN</div>
+      <div class="news-summary">역대 최대 실적 발표에도 불구하고 삼성전자 주가는 오히려 급락했다. 실적 선반영에 따른 차익실현과 반도체 피크아웃 우려가 복합적으로 작용한 것으로 분석된다.</div>
+    </div>
+    <div class="news-item">
+      <h4>89조 벌었는데 주가 7% '뚝'…"삼성전자 너무 싸, 지금 줍줍 기회"</h4>
+      <div class="news-meta">2026-07-07 · 머니투데이</div>
+      <div class="news-summary">사상 최대 실적 발표에도 주가가 7% 급락하자 일부 증권가에서는 저가 매수 기회라는 시각을 내놓았다. 반도체 대형주 차익실현과 외국인 매도세가 겹친 결과로 분석된다.</div>
+    </div>
+    <div class="news-item">
+      <h4>반도체 투톱 '삼전닉스', 2분기 영업익 150조 눈앞</h4>
+      <div class="news-meta">2026-07-06 · SEN TV</div>
+      <div class="news-summary">삼성전자와 SK하이닉스의 2분기 합산 영업이익 추정치가 150조원에 달할 것으로 전망됐다. AI 반도체 호황에 힘입어 양사 모두 분기 기준 사상 최대 실적을 정조준하고 있다.</div>
+    </div>
+    <div class="news-item">
+      <h4>삼성전자 주가, 오늘 왜 급락했을까?</h4>
+      <div class="news-meta">2026-07-10 · Investing.com</div>
+      <div class="news-summary">SK하이닉스의 나스닥 ADR 상장 이후 신규 매수보다 한국 상장 반도체주의 차익실현이 촉발됐다는 분석이 나왔다. 여기에 애플의 제품 가격 인상 발표로 AI 하드웨어 붐 지속 가능성에 대한 투자자 신뢰가 흔들리며 글로벌 칩주 매도세가 확산됐다.</div>
+    </div>
+    <div class="news-item">
+      <h4>삼성전자(005930) 주가전망, 목표주가</h4>
+      <div class="news-meta">2026-07-13 · KB증권(kbthink)</div>
+      <div class="news-summary">KB증권은 삼성전자 목표주가를 60만원으로 유지하며 매수 의견을 제시했다. 2027년이 지난 70년 반도체 역사상 공급이 가장 타이트한 해가 될 것으로 전망했다.</div>
+    </div>
+  </div>
+
+  <footer>
+    데이터 출처: scripts/orchestrate_stock_agents.py 실행 결과 (data/005930_agents.json) ·
+    news-collector / financial-data 서브에이전트를 단일 메시지에서 병렬 호출해 수집.
+  </footer>
+</div>
+</body>
+</html>

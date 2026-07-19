@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>삼성전기(009150) 뉴스·재무 요약</title>
+<style>
+  :root { --bg:#0f1115; --card:#1a1e27; --fg:#e6e9ef; --muted:#9aa4b2;
+          --accent:#4f8cff; --good:#38c172; --warn:#f6c343; --bad:#ef5753;
+          --border:#2a303c; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg);
+         font-family:-apple-system,"Segoe UI","Malgun Gothic",sans-serif;
+         line-height:1.6; padding:24px; }
+  .wrap { max-width:860px; margin:0 auto; }
+  header { border-bottom:2px solid var(--border); padding-bottom:16px;
+           margin-bottom:24px; }
+  h1 { margin:0 0 4px; font-size:1.6rem; }
+  .sub { color:var(--muted); font-size:.9rem; }
+  .disclaimer { background:#2a2010; border:1px solid var(--warn);
+                color:#f6c343; padding:12px 16px; border-radius:8px;
+                font-size:.85rem; margin:16px 0; }
+  table { width:100%; border-collapse:collapse; margin:16px 0;
+          background:var(--card); border-radius:8px; overflow:hidden; }
+  th, td { text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); }
+  th { background:#222735; color:var(--muted); font-weight:600; font-size:.85rem; }
+  td.num { font-weight:700; font-family: "Consolas", monospace; }
+  .card { background:var(--card); border:1px solid var(--border);
+          border-radius:8px; padding:16px 20px; margin:16px 0; }
+  .card h3 { margin-top:0; }
+  .news-item { border-bottom:1px solid var(--border); padding:14px 0; }
+  .news-item:last-child { border-bottom:none; }
+  .news-item h4 { margin:0 0 6px; font-size:1rem; }
+  .news-meta { color:var(--muted); font-size:.78rem; margin-bottom:6px; }
+  .news-summary { font-size:.92rem; }
+  .section-title { font-size:1.1rem; margin:28px 0 8px; color:var(--accent); }
+  footer { margin-top:32px; color:var(--muted); font-size:.8rem;
+           border-top:1px solid var(--border); padding-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>삼성전기 <span class="sub">(009150)</span></h1>
+    <div class="sub">뉴스·재무 요약 · news-collector + financial-data 서브에이전트 병렬 오케스트레이션 POC · 생성일 2026-07-18</div>
+  </header>
+
+  <div class="disclaimer">
+    ⚠️ 본 페이지는 <b>Claude Code 서브에이전트 병렬 실행 학습용 POC 산출물</b>이며 <b>투자 자문이 아닙니다</b>.
+    뉴스·재무 수치는 서브에이전트의 웹 검색 결과를 그대로 인용한 것으로, 별도 검증 게이트를 거치지 않았습니다.
+  </div>
+
+  <div class="section-title">재무 데이터 요약</div>
+  <table>
+    <thead>
+      <tr><th>항목</th><th>값</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>현재가</td><td class="num">1,493,000원</td></tr>
+      <tr><td>기준 분기</td><td class="num">2026 Q1</td></tr>
+      <tr><td>매출 (억원)</td><td class="num">32,091</td></tr>
+      <tr><td>영업이익 (억원)</td><td class="num">2,806</td></tr>
+      <tr><td>PER</td><td class="num">25.15</td></tr>
+      <tr><td>PBR</td><td class="num">1.68</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">최근 뉴스 (4건)</div>
+
+  <div class="card">
+    <div class="news-item">
+      <h4>42% 급락한 삼성전기 담는 외국인…2028년 영업익 2.7배</h4>
+      <div class="news-meta">2026-07-17 · 한국경제</div>
+      <div class="news-summary">삼성전기 주가가 7월 1일 220만5000원에서 7월 16일 127만7000원으로 42% 급락했지만, 외국인은 이달 들어 2107억원어치를 순매수했다. AI 서버용 MLCC와 반도체 기판(FC-BGA)의 성장성을 높게 평가한 저가 매수로 분석된다.</div>
+    </div>
+    <div class="news-item">
+      <h4>증권가 삼성전기 목표가 175만 대폭 상향..."외인 매수 지속"</h4>
+      <div class="news-meta">2026-07-16 · 서울경제</div>
+      <div class="news-summary">IBK투자증권이 삼성전기 목표주가를 105만원에서 175만원으로 상향하며 매수 의견을 유지했고, 2028년 영업이익 4조8000억원 전망을 제시했다. 외국인 지분율은 6월 22일 37.5%에서 7월 15일 40%까지 확대됐으나 이날 주가는 반도체주 약세 영향으로 9.84% 하락했다.</div>
+    </div>
+    <div class="news-item">
+      <h4>대신證 "삼성전기, 실적 성장 본격화…목표가 280만원"</h4>
+      <div class="news-meta">2026-07-16 · 뉴스1</div>
+      <div class="news-summary">대신증권이 삼성전기 목표주가를 280만원으로 상향 조정하며 실적 성장이 본격화될 것으로 전망했다. AI 서버용 MLCC 비중 확대가 실적 개선의 주요 동력으로 지목됐다.</div>
+    </div>
+    <div class="news-item">
+      <h4>키움증권, 삼성전기 2분기 영업이익 전년비 93% 증가 전망</h4>
+      <div class="news-meta">2026-07-09 · 종합(주가정보 포함)</div>
+      <div class="news-summary">키움증권은 삼성전기의 2026년 2분기 영업이익이 전년 동기 대비 93% 증가한 4111억원을 기록해 증권가 컨센서스(3856억원)를 상회할 것으로 추산했다. 삼성전기는 7월 29일 다음 분기 실적을 발표할 예정이다.</div>
+    </div>
+  </div>
+
+  <footer>
+    데이터 출처: news-collector / financial-data 서브에이전트 병렬 호출 결과 (data/009150_agents.json) ·
+    news-collector / financial-data 서브에이전트를 단일 메시지에서 병렬 호출해 수집.
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+# 포트폴리오 분석 에이전트 팀 정의
+# Ch.04 (2/2) 커스텀 서브에이전트 + 에이전트 팀 개념 실습
+
+team: portfolio-analysis
+description: 보유 종목 리스트를 3명의 전문가가 병렬 분석해 종합 리포트를 생성한다.
+version: 0.1.0
+
+leader:
+  role: orchestrator
+  runtime: scripts/orchestrate_portfolio.py
+  responsibilities:
+    - 포트폴리오 파일 로드 및 팀원 3인에게 동시에 태스크 배포
+    - 3개 결과 병합 → HTML 리포트 생성
+    - 파일 소유권 위반 여부 감시 (팀원 산출물 스키마 검증)
+
+members:
+  - name: portfolio-valuation
+    definition: .claude/agents/portfolio-valuation.md
+    owns_read:
+      - data/{stock_code}_fundamentals.json
+    produces:
+      schema_key: results[].verdict
+      values: [저평가, 적정, 주의, 고평가, unknown]
+
+  - name: portfolio-risk
+    definition: .claude/agents/portfolio-risk.md
+    owns_read:
+      - data/{stock_code}_market.json
+    produces:
+      schema_key: results[].overall
+      values: [low, medium, high, unknown]
+
+  - name: portfolio-allocation
+    definition: .claude/agents/portfolio-allocation.md
+    owns_read:
+      - data/{stock_code}_market.json  # 시세만
+    produces:
+      schema_key: results[].action
+      values: [매수, 매도, 유지, unknown]
+
+# 파일 소유권(중복 읽기 허용 규칙)
+# - market.json은 risk와 allocation 모두 읽지만 "읽기 전용"이므로 충돌 없음
+# - 어느 에이전트도 파일을 쓰지 않으며, 출력 파일은 리더만 outputs/에 기록
+ownership_rules:
+  writable_by_leader_only:
+    - outputs/portfolio_report_*.html
+  read_only_all:
+    - data/*.json
+
+execution:
+  mode: parallel
+  timeout_sec: 240
+  output_dir: outputs
+
+demo_command: >
+  python scripts/orchestrate_portfolio.py
+  --portfolio data/portfolio.example.json --save

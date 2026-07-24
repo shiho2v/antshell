@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>포트폴리오 분석 리포트 — 샘플 4종목 포트폴리오</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", sans-serif; margin: 32px; color: #222; }
+  h1 { margin-bottom: 4px; }
+  .meta { color: #666; margin-bottom: 24px; }
+  h2 { border-bottom: 2px solid #333; padding-bottom: 4px; margin-top: 32px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+  th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: right; }
+  th { background: #f5f5f5; text-align: center; }
+  td:nth-child(1), td:nth-child(2) { text-align: left; }
+</style>
+</head>
+<body>
+<h1>샘플 4종목 포트폴리오 — 종합 분석</h1>
+<div class="meta">기준일: 2026-07-25 · 팀: portfolio-analysis (valuation + risk + allocation)</div>
+
+<h2>1. 밸류에이션 (portfolio-valuation)</h2>
+<table>
+  <thead><tr><th>종목코드</th><th>종목명</th><th>매출성장</th><th>영업이익성장</th><th>판정</th><th>점수</th></tr></thead>
+  <tbody><tr><td>005930</td><td>삼성전자</td><td>10.88</td><td>33.23</td><td>저평가</td><td>4</td></tr><tr><td>000660</td><td>SK하이닉스</td><td>46.76</td><td>101.16</td><td>저평가</td><td>5</td></tr><tr><td>009150</td><td>삼성전기</td><td>9.91</td><td>24.26</td><td>적정</td><td>3</td></tr><tr><td>008490</td><td>서흥</td><td>10.57</td><td>48.35</td><td>저평가</td><td>4</td></tr></tbody>
+</table>
+
+<h2>2. 리스크 (portfolio-risk)</h2>
+<p>총 평가금액: 68,412,000 원</p>
+<table>
+  <thead><tr><th>종목코드</th><th>종목명</th><th>실제비중</th><th>집중도</th><th>52주낙폭</th><th>수급</th><th>점수</th><th>종합</th></tr></thead>
+  <tbody><tr><td>005930</td><td>삼성전자</td><td>25.0%</td><td>medium</td><td>medium</td><td>outflow</td><td>3</td><td>medium</td></tr><tr><td>000660</td><td>SK하이닉스</td><td>47.8%</td><td>high</td><td>medium</td><td>outflow</td><td>4</td><td>high</td></tr><tr><td>009150</td><td>삼성전기</td><td>18.52%</td><td>low</td><td>high</td><td>inflow</td><td>2</td><td>medium</td></tr><tr><td>008490</td><td>서흥</td><td>8.68%</td><td>low</td><td>high</td><td>outflow</td><td>3</td><td>medium</td></tr></tbody>
+</table>
+
+<h2>3. 리밸런싱 (portfolio-allocation)</h2>
+<p>총자산: 73,412,000 원 · 현금: 5,000,000 원</p>
+<table>
+  <thead><tr><th>종목코드</th><th>종목명</th><th>실제비중</th><th>목표비중</th><th>드리프트</th><th>액션</th><th>리밸런싱 금액(원)</th></tr></thead>
+  <tbody><tr><td>005930</td><td>삼성전자</td><td>23.2932%</td><td>30.0%</td><td>-6.7068%p</td><td>매수</td><td>4,923,600</td></tr><tr><td>000660</td><td>SK하이닉스</td><td>44.5431%</td><td>25.0%</td><td>19.5431%p</td><td>매도</td><td>14,347,000</td></tr><tr><td>009150</td><td>삼성전기</td><td>17.2615%</td><td>25.0%</td><td>-7.7385%p</td><td>매수</td><td>5,681,000</td></tr><tr><td>008490</td><td>서흥</td><td>8.0913%</td><td>20.0%</td><td>-11.9087%p</td><td>매수</td><td>8,742,400</td></tr></tbody>
+</table>
+
+</body>
+</html>

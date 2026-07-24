@@ -1,0 +1,29 @@
+{
+  "portfolio_name": "경계 케이스 테스트 포트폴리오",
+  "as_of": "2026-07-25",
+  "base_currency": "KRW",
+  "cash": 1000000,
+  "holdings": [
+    {
+      "stock_code": "005930",
+      "name": "삼성전자",
+      "quantity": 30,
+      "avg_price": 71500,
+      "target_weight_pct": 50.0
+    },
+    {
+      "stock_code": "005380",
+      "name": "현대차 (fundamentals/market 파일 없음)",
+      "quantity": 20,
+      "avg_price": 210000,
+      "target_weight_pct": 30.0
+    },
+    {
+      "stock_code": "999999",
+      "name": "존재하지 않는 종목",
+      "quantity": 100,
+      "avg_price": 10000,
+      "target_weight_pct": 20.0
+    }
+  ]
+}

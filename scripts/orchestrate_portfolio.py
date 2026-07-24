@@ -102,8 +102,34 @@ def run_orchestrator(prompt: str) -> dict:
     if result.returncode != 0:
         raise RuntimeError(f"claude CLI 실행 실패: {result.stderr.strip()}")
 
-    envelope = json.loads(result.stdout)
-    return json.loads(envelope["result"])
+    # 서브에이전트가 스키마를 안 지키고 마크다운/설명을 섞어 돌려주는 경우가 있어
+    # 어느 단계에서 깨졌는지 눈에 보이도록 감싼다.
+    try:
+        envelope = json.loads(result.stdout)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"claude CLI 응답 봉투(JSON) 파싱 실패: {e}\n원 응답(앞 500자): {result.stdout[:500]!r}"
+        ) from e
+
+    raw_result = envelope.get("result", "")
+    try:
+        return json.loads(raw_result)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"오케스트레이터 결과(JSON) 파싱 실패: {e}\n"
+            "→ 서브에이전트가 스키마를 벗어난 텍스트를 반환했을 가능성이 큽니다.\n"
+            f"원 result(앞 500자): {raw_result[:500]!r}"
+        ) from e
+
+
+def _num(value, default: float = 0.0) -> float:
+    # None/문자열 등 숫자 포맷팅(:,.0f, %)에 못 넣는 값을 안전하게 흡수한다.
+    if isinstance(value, (int, float)):
+        return float(value)
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def render_html(merged: dict) -> str:
@@ -120,11 +146,11 @@ def render_html(merged: dict) -> str:
     risk_rows = "".join(
         f"<tr><td>{html.escape(r.get('stock_code', ''))}</td>"
         f"<td>{html.escape(r.get('name', ''))}</td>"
-        f"<td>{r.get('actual_weight_pct', 0)}%</td>"
+        f"<td>{_num(r.get('actual_weight_pct'))}%</td>"
         f"<td>{html.escape(str(r.get('concentration', '')))}</td>"
         f"<td>{html.escape(str(r.get('drawdown_from_52w', '')))}</td>"
         f"<td>{html.escape(str(r.get('supply_flow', '')))}</td>"
-        f"<td>{r.get('risk_score', 0)}</td>"
+        f"<td>{_num(r.get('risk_score'))}</td>"
         f"<td>{html.escape(str(r.get('overall', '')))}</td></tr>"
         for r in merged.get("risk", {}).get("results", [])
     )
@@ -132,11 +158,11 @@ def render_html(merged: dict) -> str:
     alloc_rows = "".join(
         f"<tr><td>{html.escape(r.get('stock_code', ''))}</td>"
         f"<td>{html.escape(r.get('name', ''))}</td>"
-        f"<td>{r.get('actual_weight_pct', 0)}%</td>"
-        f"<td>{r.get('target_weight_pct', 0)}%</td>"
-        f"<td>{r.get('drift_pct', 0)}%p</td>"
+        f"<td>{_num(r.get('actual_weight_pct'))}%</td>"
+        f"<td>{_num(r.get('target_weight_pct'))}%</td>"
+        f"<td>{_num(r.get('drift_pct'))}%p</td>"
         f"<td>{html.escape(str(r.get('action', '')))}</td>"
-        f"<td>{r.get('rebalance_amount', 0):,.0f}</td></tr>"
+        f"<td>{_num(r.get('rebalance_amount')):,.0f}</td></tr>"
         for r in merged.get("allocation", {}).get("results", [])
     )
 
@@ -167,14 +193,14 @@ def render_html(merged: dict) -> str:
 </table>
 
 <h2>2. 리스크 (portfolio-risk)</h2>
-<p>총 평가금액: {merged.get('risk', {}).get('total_market_value', 0):,.0f} 원</p>
+<p>총 평가금액: {_num(merged.get('risk', {}).get('total_market_value')):,.0f} 원</p>
 <table>
   <thead><tr><th>종목코드</th><th>종목명</th><th>실제비중</th><th>집중도</th><th>52주낙폭</th><th>수급</th><th>점수</th><th>종합</th></tr></thead>
   <tbody>{risk_rows}</tbody>
 </table>
 
 <h2>3. 리밸런싱 (portfolio-allocation)</h2>
-<p>총자산: {merged.get('allocation', {}).get('total_asset', 0):,.0f} 원 · 현금: {merged.get('allocation', {}).get('cash', 0):,.0f} 원</p>
+<p>총자산: {_num(merged.get('allocation', {}).get('total_asset')):,.0f} 원 · 현금: {_num(merged.get('allocation', {}).get('cash')):,.0f} 원</p>
 <table>
   <thead><tr><th>종목코드</th><th>종목명</th><th>실제비중</th><th>목표비중</th><th>드리프트</th><th>액션</th><th>리밸런싱 금액(원)</th></tr></thead>
   <tbody>{alloc_rows}</tbody>

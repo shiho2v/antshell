@@ -1,0 +1,36 @@
+{
+  "portfolio_name": "샘플 4종목 포트폴리오",
+  "as_of": "2026-07-25",
+  "base_currency": "KRW",
+  "cash": 5000000,
+  "holdings": [
+    {
+      "stock_code": "005930",
+      "name": "삼성전자",
+      "quantity": 60,
+      "avg_price": 71500,
+      "target_weight_pct": 30.0
+    },
+    {
+      "stock_code": "000660",
+      "name": "SK하이닉스",
+      "quantity": 15,
+      "avg_price": 168000,
+      "target_weight_pct": 25.0
+    },
+    {
+      "stock_code": "009150",
+      "name": "삼성전기",
+      "quantity": 8,
+      "avg_price": 1420000,
+      "target_weight_pct": 25.0
+    },
+    {
+      "stock_code": "008490",
+      "name": "서흥",
+      "quantity": 300,
+      "avg_price": 32000,
+      "target_weight_pct": 20.0
+    }
+  ]
+}

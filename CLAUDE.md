@@ -6,7 +6,7 @@
 
 ## ⚠️ 토큰 절약 규칙 (반드시 준수)
 - 이 파일 외 다른 파일은 **작업에 필요한 것만** 읽을 것
-- 주차별 작업이면 → `docs/weekly/WEEK_현재주차.md` 만 읽을 것
+- 주차별 작업이면 → `docs/weekly/WEEK_04.md` 만 읽을 것
 - 전체 파일을 한 번에 읽지 말 것
 
 ## 필수 파일 위치 (필요할 때만 읽기)
@@ -17,16 +17,16 @@
 | 환경변수·API 키 설정 | `_claude_core/ENV_GUIDE.md` |
 | Git 브랜치·커밋 규칙 | `_claude_core/GIT_RULES.md` |
 | Notion 연동 설정 | `_claude_core/NOTION_SETUP.md` |
-| 현재 주차 작업 계획 | `docs/weekly/WEEK_XX.md` ← XX를 현재 주차로 교체 |
+| 현재 주차 작업 계획 | `docs/weekly/WEEK_04.md` ← XX를 현재 주차로 교체 |
 | 아키텍처 다이어그램 | `docs/architecture/ARCH.md` |
 | 초기 환경 세팅 (신규 팀원) | `docs/setup/ONBOARDING.md` |
 | 코드 작성·리뷰 시 준수 기준 | `DEV_PRINCIPLES.md` ← **코드 작업 시에만** 읽기 |
 
 ## 현재 진행 주차
 <!-- 매주 발표자가 업데이트 -->
-CURRENT_WEEK=01
-CURRENT_PRESENTER=스터디장(주인)
-CURRENT_CHAPTER=Ch.01~02
+CURRENT_WEEK=04
+CURRENT_PRESENTER=김비오
+CURRENT_CHAPTER=Ch.04 (2/2)
 
 ## 새로운 팀원이라면
 `docs/setup/ONBOARDING.md` 를 먼저 읽으세요.

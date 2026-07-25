@@ -44,6 +44,7 @@ yarn-error.log*
 # =====================
 .claude/cache/
 .claude/checkpoints/
+.claude/settings.local.json
 
 # =====================
 # OS / 에디터

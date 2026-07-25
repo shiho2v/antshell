@@ -90,6 +90,21 @@ PY
 - 저장 경로: `docs/blog/{YYYY-MM-DD}_{TICKER}_{회사명}.md`
   (`{YYYY-MM-DD}` 는 `manifest.data_cutoff`. 회사명의 `\ / : * ? " < > |` 는 제거)
 
+## 4-1. 차트 생성
+
+```bash
+python "${CLAUDE_SKILL_DIR}/scripts/render_charts.py" {TICKER}
+```
+
+- 이 스크립트는 `data/normalized/` 도 읽는다. Claude 의 읽기 화이트리스트보다 넓은데,
+  그 화이트리스트의 취지는 **Claude 가 원본을 다시 읽고 숫자를 새로 만드는 것**을 막는 데 있다.
+  기계적 렌더링은 그 위험이 없다. **Claude 가 normalized 를 직접 읽는 것은 여전히 금지다.**
+- 출력: `docs/blog/assets/{TICKER}/*.png` + `charts.json`(차트 원장).
+- `--base-url` 을 주지 않으면 `git remote origin` 에서 GitHub raw URL 을 유추한다.
+- 데이터가 이상한 차트는 **자동으로 건너뛴다** (예: 분기 단독 매출이 음수).
+  건너뛴 사실을 본문에 밝힌다. 그럴듯한데 틀린 그림은 틀린 문장보다 위험하다.
+- 본문에는 `![캡션](URL)<!-- FIG:이름 -->` 형식으로 넣고 캡션·읽는 법을 붙인다.
+
 ## 5. 검증
 
 ```bash

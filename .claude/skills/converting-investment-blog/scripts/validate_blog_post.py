@@ -54,8 +54,9 @@ MODULES = (
     "valuation", "trend", "risk", "catalyst",
 )
 ANNOTATION_PATTERN = re.compile(
-    r"<!--\s*(CLM-\d{4}|MANIFEST|MOD:[a-z_]+/[A-Z]+-[A-Z0-9]+)\s*-->"
+    r"<!--\s*(CLM-\d{4}|MANIFEST|MOD:[a-z_]+/[A-Z]+-[A-Z0-9]+|FIG:[a-z_]+)\s*-->"
 )
+IMAGE_PATTERN = re.compile(r"!\[[^\]]*\]\([^)]*\)")
 CLAIM_ID_PATTERN = re.compile(r"CLM-\d{4}")
 # MANIFEST·MOD 는 "원장·채점표를 그대로 옮겼다"는 선언이므로 수치 대조를 엄격히 적용한다.
 STRICT_PREFIXES = ("MANIFEST", "MOD:")
@@ -106,6 +107,16 @@ def load_module_criteria(data_dir: Path, ticker: str) -> dict[str, dict]:
         for row in result.get("criteria_scores") or []:
             criteria[f"{module_name}/{row['criterion_id']}"] = row
     return criteria
+
+
+def load_chart_ledger(draft_path: Path, ticker: str) -> tuple[dict[str, dict], Path]:
+    """차트 원장(charts.json)을 읽는다. render_charts.py 가 초안 옆에 남긴다."""
+    asset_dir = draft_path.parent / "assets" / ticker
+    ledger_path = asset_dir / "charts.json"
+    if not ledger_path.exists():
+        return {}, asset_dir
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    return {chart["name"]: chart for chart in ledger.get("charts", [])}, asset_dir
 
 
 def collect_known_numbers(manifest: dict, evidence: dict | None,
@@ -260,12 +271,14 @@ def check_forbidden_phrases(title: str, body: str) -> list[str]:
 
 
 def check_annotations(body: str, line_offset: int, manifest: dict, known: set[float],
-                      criteria: dict[str, dict]) -> tuple[list[str], list[str], set[str], set[str]]:
-    """근거 주석·claim 참조·채점항목 참조·수치 대조를 한 번에 훑는다."""
+                      criteria: dict[str, dict], charts: dict[str, dict],
+                      asset_dir: Path) -> tuple[list[str], list[str], set[str], set[str], set[str]]:
+    """근거 주석·claim 참조·채점항목 참조·차트 참조·수치 대조를 한 번에 훑는다."""
     failures: list[str] = []
     warnings: list[str] = []
     used_claim_ids: set[str] = set()
     used_criteria: set[str] = set()
+    used_figures: set[str] = set()
     valid_claim_ids = {claim["claim_id"] for claim in manifest.get("claims", [])}
 
     for unit in iter_checkable_units(body, line_offset):
@@ -273,6 +286,13 @@ def check_annotations(body: str, line_offset: int, manifest: dict, known: set[fl
         found: list[tuple[int, str, float]] = []
         for line_number, line in unit:
             annotations.extend(ANNOTATION_PATTERN.findall(line))
+            if IMAGE_PATTERN.search(line) and not any(
+                item.startswith("FIG:") for item in ANNOTATION_PATTERN.findall(line)
+            ):
+                failures.append(
+                    f"{line_number}행: 이미지에 차트 주석(<!-- FIG:이름 -->)이 없다 — "
+                    "차트 원장과 대조할 수 없다."
+                )
             for orphan in CLAIM_ID_PATTERN.findall(HTML_COMMENT_PATTERN.sub(" ", line)):
                 failures.append(
                     f"{line_number}행: claim ID {orphan} 가 본문에 노출됐다 — HTML 주석으로 감춘다."
@@ -292,6 +312,20 @@ def check_annotations(body: str, line_offset: int, manifest: dict, known: set[fl
                 if reference not in criteria:
                     failures.append(
                         f"{unit[0][0]}행: 존재하지 않는 채점 항목 {reference} 를 지목했다."
+                    )
+                continue
+            if annotation.startswith("FIG:"):
+                figure_name = annotation[4:]
+                used_figures.add(figure_name)
+                chart = charts.get(figure_name)
+                if chart is None:
+                    failures.append(
+                        f"{unit[0][0]}행: 차트 원장에 없는 그림 {figure_name} 을 지목했다 "
+                        "— render_charts.py 를 먼저 실행한다."
+                    )
+                elif not (asset_dir / chart["file"]).exists():
+                    failures.append(
+                        f"{unit[0][0]}행: 그림 파일이 없다 — {asset_dir / chart['file']}"
                     )
                 continue
             used_claim_ids.add(annotation)
@@ -325,7 +359,7 @@ def check_annotations(body: str, line_offset: int, manifest: dict, known: set[fl
                 )
             else:
                 warnings.append(message)
-    return failures, warnings, used_claim_ids, used_criteria
+    return failures, warnings, used_claim_ids, used_criteria, used_figures
 
 
 def check_conclusion_strength(manifest: dict, meta: dict) -> list[str]:
@@ -384,17 +418,26 @@ def main() -> int:
             )
 
         criteria = load_module_criteria(data_dir, args.ticker)
+        charts, asset_dir = load_chart_ledger(draft_path, args.ticker)
         known = collect_known_numbers(manifest, evidence, criteria)
         failures = check_forbidden_phrases(str(meta.get("title", "")), body)
 
-        annotation_failures, warnings, used_claim_ids, used_criteria = check_annotations(
-            body, line_offset, manifest, known, criteria
+        (annotation_failures, warnings, used_claim_ids, used_criteria,
+         used_figures) = check_annotations(
+            body, line_offset, manifest, known, criteria, charts, asset_dir
         )
         failures.extend(annotation_failures)
         failures.extend(check_conclusion_strength(manifest, meta))
 
         if not any(key in raw_text for key in DISCLAIMER_KEYS):
             failures.append("면책 문구(투자 자문 아님)가 없다.")
+        # 출처절 등 검증 제외 구역에 이미지를 숨기면 FIG 대조를 피할 수 있다.
+        total_images = len(IMAGE_PATTERN.findall(body))
+        if total_images > len(used_figures):
+            failures.append(
+                f"이미지 {total_images}개 중 {len(used_figures)}개만 검증됐다 — "
+                "검증 제외 구역(출처절·코드블록)에 이미지를 넣지 않는다."
+            )
         if not used_claim_ids and not used_criteria:
             failures.append(
                 "근거를 지목한 문장이 하나도 없다 — claim 또는 채점 항목 주석을 달아야 한다."
@@ -407,7 +450,8 @@ def main() -> int:
     total_claims = len(manifest.get("claims", []))
     print(f"검증 대상: {draft_path.name}")
     print(f"근거 인용: {len(used_claim_ids)} / {total_claims} claim"
-          f" · 채점 항목 {len(used_criteria)} / {len(criteria)}")
+          f" · 채점 항목 {len(used_criteria)} / {len(criteria)}"
+          f" · 차트 {len(used_figures)} / {len(charts)}")
     for warning in warnings:
         print(f"  [WARN] {warning}")
     for failure in failures:

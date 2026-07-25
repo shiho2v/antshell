@@ -231,6 +231,68 @@ def test_na_criterion_needs_no_number(tmp_path: Path, data_dir: Path) -> None:
     assert result.returncode == 0, result.stdout
 
 
+def make_chart_ledger(tmp_path: Path, with_image_file: bool = True) -> None:
+    """초안 옆에 render_charts.py 가 남기는 차트 원장을 흉내낸다."""
+    asset_dir = tmp_path / "assets" / TICKER
+    asset_dir.mkdir(parents=True)
+    ledger = {
+        "ticker": TICKER,
+        "charts": [{"name": "canslim_grades", "file": "canslim_grades.png",
+                    "title": "CANSLIM 7항목 채점"}],
+    }
+    (asset_dir / "charts.json").write_text(
+        json.dumps(ledger, ensure_ascii=False), encoding="utf-8"
+    )
+    if with_image_file:
+        (asset_dir / "canslim_grades.png").write_bytes(b"fake-png")
+
+
+def test_figure_annotation_passes(tmp_path: Path, data_dir: Path) -> None:
+    make_chart_ledger(tmp_path)
+    body = ("\n## 5. 추세\n\n![CANSLIM](assets/009240/canslim_grades.png)"
+            "<!-- FIG:canslim_grades -->\n\n영업이익률은 1.3%다.<!-- CLM-0004 -->\n")
+    result = run_validator(write_draft(tmp_path, body), data_dir)
+    assert result.returncode == 0, result.stdout
+    assert "차트 1 / 1" in result.stdout
+
+
+def test_image_without_figure_annotation_fails(tmp_path: Path, data_dir: Path) -> None:
+    make_chart_ledger(tmp_path)
+    body = ("\n## 5. 추세\n\n![CANSLIM](assets/009240/canslim_grades.png)\n"
+            "\n영업이익률은 1.3%다.<!-- CLM-0004 -->\n")
+    result = run_validator(write_draft(tmp_path, body), data_dir)
+    assert result.returncode == 1
+    assert "차트 주석" in result.stdout
+
+
+def test_unknown_figure_fails(tmp_path: Path, data_dir: Path) -> None:
+    make_chart_ledger(tmp_path)
+    body = ("\n## 5. 추세\n\n![없는 차트](assets/009240/nope.png)<!-- FIG:nope -->\n"
+            "\n영업이익률은 1.3%다.<!-- CLM-0004 -->\n")
+    result = run_validator(write_draft(tmp_path, body), data_dir)
+    assert result.returncode == 1
+    assert "차트 원장에 없는" in result.stdout
+
+
+def test_missing_image_file_fails(tmp_path: Path, data_dir: Path) -> None:
+    make_chart_ledger(tmp_path, with_image_file=False)
+    body = ("\n## 5. 추세\n\n![CANSLIM](assets/009240/canslim_grades.png)"
+            "<!-- FIG:canslim_grades -->\n\n영업이익률은 1.3%다.<!-- CLM-0004 -->\n")
+    result = run_validator(write_draft(tmp_path, body), data_dir)
+    assert result.returncode == 1
+    assert "그림 파일이 없다" in result.stdout
+
+
+def test_image_hidden_in_sources_section_fails(tmp_path: Path, data_dir: Path) -> None:
+    """출처절은 수치 검사 제외 구역이라 이미지를 숨기는 통로가 될 수 있다."""
+    make_chart_ledger(tmp_path)
+    body = ("\n## 1. 요약\n\n영업이익률은 1.3%다.<!-- CLM-0004 -->\n"
+            "\n## 8. 출처\n\n![숨긴 차트](assets/009240/canslim_grades.png)\n")
+    result = run_validator(write_draft(tmp_path, body), data_dir)
+    assert result.returncode == 1
+    assert "검증 제외 구역" in result.stdout
+
+
 def test_ticker_mismatch_is_execution_error(tmp_path: Path, data_dir: Path) -> None:
     body = "\n## 1. 한 줄 요약\n\n영업이익률은 1.3%다.<!-- CLM-0004 -->\n"
     draft_path = write_draft(tmp_path, body)

@@ -1,8 +1,8 @@
 {
   "ticker": "009240",
-  "as_of": "2026-07-25",
+  "as_of": "2026-07-26",
   "base_url": "https://raw.githubusercontent.com/shiho2v/antshell/main/docs/blog/assets",
-  "generated_at": "2026-07-25T23:40:15",
+  "generated_at": "2026-07-26T00:25:56",
   "charts": [
     {
       "name": "annual_performance",
@@ -32,7 +32,7 @@
           "operating_income_billion": 184.9
         }
       ],
-      "as_of": "2026-07-25",
+      "as_of": "2026-07-26",
       "relative_path": "assets/009240/annual_performance.png",
       "url": "https://raw.githubusercontent.com/shiho2v/antshell/main/docs/blog/assets/009240/annual_performance.png"
     },
@@ -48,7 +48,7 @@
         "price_end_rebased": 84.63,
         "index_end_rebased": 131.58
       },
-      "as_of": "2026-07-25",
+      "as_of": "2026-07-26",
       "relative_path": "assets/009240/relative_performance.png",
       "url": "https://raw.githubusercontent.com/shiho2v/antshell/main/docs/blog/assets/009240/relative_performance.png"
     },
@@ -109,7 +109,7 @@
           "na_reason": null
         }
       ],
-      "as_of": "2026-07-25",
+      "as_of": "2026-07-26",
       "relative_path": "assets/009240/canslim_grades.png",
       "url": "https://raw.githubusercontent.com/shiho2v/antshell/main/docs/blog/assets/009240/canslim_grades.png"
     },
@@ -129,19 +129,19 @@
         {
           "module": "growth",
           "score": 37.3,
-          "weight": 15.0,
+          "weight": 10.0,
           "counted_in_composite": true
         },
         {
           "module": "moat",
           "score": 39.6,
-          "weight": 20.0,
+          "weight": 15.0,
           "counted_in_composite": true
         },
         {
           "module": "valuation",
           "score": 50.0,
-          "weight": 10.0,
+          "weight": 25.0,
           "counted_in_composite": true
         },
         {
@@ -165,11 +165,11 @@
         {
           "module": "business",
           "score": 93.3,
-          "weight": 15.0,
+          "weight": 10.0,
           "counted_in_composite": true
         }
       ],
-      "as_of": "2026-07-25",
+      "as_of": "2026-07-26",
       "relative_path": "assets/009240/module_scores.png",
       "url": "https://raw.githubusercontent.com/shiho2v/antshell/main/docs/blog/assets/009240/module_scores.png"
     }

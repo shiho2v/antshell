@@ -69,6 +69,22 @@ status: "draft"
 
 {{RISK_BODY}}<!-- {{CLAIM_ID}} -->
 
+#### CANSLIM 체크리스트 (trend 모듈을 실행했다면 필수)
+
+| 항목 | 무엇을 보는가 | 지표 | 값 | 등급 |
+|---|---|---|---|---|
+| **C** | 최근 분기 실적 | {{METRIC}} | {{VALUE}} | {{LEVEL}}<!-- MOD:trend/TRD-C --> |
+| **A** | 연간 이익 성장 | {{METRIC}} | {{VALUE_OR_NA}} | {{LEVEL_OR_NA}}<!-- MOD:trend/TRD-A --> |
+| **N** | 신고가 근접도 | {{METRIC}} | {{VALUE}} | {{LEVEL}}<!-- MOD:trend/TRD-N --> |
+| **S** | 수급(거래량 급증) | {{METRIC}} | {{VALUE}} | {{LEVEL}}<!-- MOD:trend/TRD-S --> |
+| **L** | 주도주 여부 | {{METRIC}} | {{VALUE}} | {{LEVEL}}<!-- MOD:trend/TRD-L --> |
+| **I** | 기관·외국인 순매수 | {{METRIC}} | {{VALUE}} | {{LEVEL}}<!-- MOD:trend/TRD-I --> |
+| **M** | 시장 방향 | {{METRIC}} | {{VALUE}} | {{LEVEL}}<!-- MOD:trend/TRD-M --> |
+
+{{HOW_TO_READ}}
+
+N/A 항목은 **0점이 아니라 미채점**으로 쓰고 사유를 함께 적는다.
+
 ## 6. 이 분석에 대한 반론
 
 위 결론과 어긋나는 근거를 숨기지 않고 남긴다.

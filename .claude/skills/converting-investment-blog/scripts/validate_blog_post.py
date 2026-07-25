@@ -49,8 +49,16 @@ BUY_SELL_PHRASES = ("매수", "매도")
 NEGATION_PATTERN = r"않|없|금지|아니|권유|제시하지|산출하지|불가"
 DISCLAIMER_KEYS = ("투자 자문", "투자자문")
 
-ANNOTATION_PATTERN = re.compile(r"<!--\s*(CLM-\d{4}|MANIFEST)\s*-->")
+MODULES = (
+    "business", "quality", "growth", "moat",
+    "valuation", "trend", "risk", "catalyst",
+)
+ANNOTATION_PATTERN = re.compile(
+    r"<!--\s*(CLM-\d{4}|MANIFEST|MOD:[a-z_]+/[A-Z]+-[A-Z0-9]+)\s*-->"
+)
 CLAIM_ID_PATTERN = re.compile(r"CLM-\d{4}")
+# MANIFEST·MOD 는 "원장·채점표를 그대로 옮겼다"는 선언이므로 수치 대조를 엄격히 적용한다.
+STRICT_PREFIXES = ("MANIFEST", "MOD:")
 NUMBER_PATTERN = re.compile(r"-?\d[\d,]*(?:\.\d+)?")
 ISO_DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}(?:T[\d:]+)?")
 LONG_DIGITS_PATTERN = re.compile(r"\d{11,}")
@@ -87,8 +95,22 @@ def parse_front_matter(text: str) -> tuple[dict, str, int]:
     return meta, body, offset
 
 
-def collect_known_numbers(manifest: dict, evidence: dict | None) -> set[float]:
-    """블로그에 등장해도 되는 숫자 집합 — manifest 와 evidence 에서만 모은다."""
+def load_module_criteria(data_dir: Path, ticker: str) -> dict[str, dict]:
+    """module-results 의 criteria_scores 를 'module/criterion_id' 키로 펼친다."""
+    criteria: dict[str, dict] = {}
+    for module_name in MODULES:
+        path = data_dir / "module-results" / f"{ticker}_{module_name}.json"
+        if not path.exists():
+            continue
+        result = json.loads(path.read_text(encoding="utf-8"))
+        for row in result.get("criteria_scores") or []:
+            criteria[f"{module_name}/{row['criterion_id']}"] = row
+    return criteria
+
+
+def collect_known_numbers(manifest: dict, evidence: dict | None,
+                          criteria: dict[str, dict]) -> set[float]:
+    """블로그에 등장해도 되는 숫자 집합 — manifest·evidence·채점표에서만 모은다."""
     known: set[float] = set()
 
     def remember(value: object) -> None:
@@ -125,6 +147,11 @@ def collect_known_numbers(manifest: dict, evidence: dict | None) -> set[float]:
             calculation = item.get("calculation") or {}
             for input_value in (calculation.get("inputs") or {}).values():
                 remember(input_value)
+
+    for row in criteria.values():
+        remember(row.get("metric_value"))
+        remember(row.get("level"))
+        remember(row.get("weight"))
     return known
 
 
@@ -232,12 +259,13 @@ def check_forbidden_phrases(title: str, body: str) -> list[str]:
     return failures
 
 
-def check_annotations(body: str, line_offset: int, manifest: dict,
-                      known: set[float]) -> tuple[list[str], list[str], set[str]]:
-    """근거 주석·claim 참조·수치 대조를 한 번에 훑는다."""
+def check_annotations(body: str, line_offset: int, manifest: dict, known: set[float],
+                      criteria: dict[str, dict]) -> tuple[list[str], list[str], set[str], set[str]]:
+    """근거 주석·claim 참조·채점항목 참조·수치 대조를 한 번에 훑는다."""
     failures: list[str] = []
     warnings: list[str] = []
     used_claim_ids: set[str] = set()
+    used_criteria: set[str] = set()
     valid_claim_ids = {claim["claim_id"] for claim in manifest.get("claims", [])}
 
     for unit in iter_checkable_units(body, line_offset):
@@ -258,6 +286,14 @@ def check_annotations(body: str, line_offset: int, manifest: dict,
         for annotation in annotations:
             if annotation == "MANIFEST":
                 continue
+            if annotation.startswith("MOD:"):
+                reference = annotation[4:]
+                used_criteria.add(reference)
+                if reference not in criteria:
+                    failures.append(
+                        f"{unit[0][0]}행: 존재하지 않는 채점 항목 {reference} 를 지목했다."
+                    )
+                continue
             used_claim_ids.add(annotation)
             if annotation not in valid_claim_ids:
                 failures.append(
@@ -268,24 +304,28 @@ def check_annotations(body: str, line_offset: int, manifest: dict,
         if not annotations:
             preview = unit[0][1].strip()[:60]
             failures.append(
-                f"{unit[0][0]}행: 수치가 있는데 근거 주석(<!-- CLM-xxxx --> 또는 "
-                f"<!-- MANIFEST -->)이 없다 — {preview}"
+                f"{unit[0][0]}행: 수치가 있는데 근거 주석(<!-- CLM-xxxx --> · "
+                f"<!-- MANIFEST --> · <!-- MOD:모듈/항목 -->)이 없다 — {preview}"
             )
             continue
 
-        is_manifest_line = "MANIFEST" in annotations
+        is_manifest_line = any(
+            annotation.startswith(STRICT_PREFIXES) for annotation in annotations
+        )
         for line_number, token, value in found:
             decimals = len(token.split(".")[1]) if "." in token else 0
             if matches_known(value, decimals, known):
                 continue
             message = (
-                f"{line_number}행: 숫자 {token} 을 manifest·evidence 에서 확인하지 못했다."
+                f"{line_number}행: 숫자 {token} 을 manifest·evidence·채점표에서 확인하지 못했다."
             )
             if is_manifest_line:
-                failures.append(message + " (MANIFEST 주석은 원장 값만 허용한다)")
+                failures.append(
+                    message + " (MANIFEST·MOD 주석은 원장·채점표 값만 허용한다)"
+                )
             else:
                 warnings.append(message)
-    return failures, warnings, used_claim_ids
+    return failures, warnings, used_claim_ids, used_criteria
 
 
 def check_conclusion_strength(manifest: dict, meta: dict) -> list[str]:
@@ -343,19 +383,22 @@ def main() -> int:
                 f"frontmatter 티커 '{meta.get('ticker')}' 가 --ticker {args.ticker} 와 다르다."
             )
 
-        known = collect_known_numbers(manifest, evidence)
+        criteria = load_module_criteria(data_dir, args.ticker)
+        known = collect_known_numbers(manifest, evidence, criteria)
         failures = check_forbidden_phrases(str(meta.get("title", "")), body)
 
-        annotation_failures, warnings, used_claim_ids = check_annotations(
-            body, line_offset, manifest, known
+        annotation_failures, warnings, used_claim_ids, used_criteria = check_annotations(
+            body, line_offset, manifest, known, criteria
         )
         failures.extend(annotation_failures)
         failures.extend(check_conclusion_strength(manifest, meta))
 
         if not any(key in raw_text for key in DISCLAIMER_KEYS):
             failures.append("면책 문구(투자 자문 아님)가 없다.")
-        if not used_claim_ids:
-            failures.append("근거를 지목한 문장이 하나도 없다 — claim 주석을 달아야 한다.")
+        if not used_claim_ids and not used_criteria:
+            failures.append(
+                "근거를 지목한 문장이 하나도 없다 — claim 또는 채점 항목 주석을 달아야 한다."
+            )
 
     except ValidationError as error:
         print(f"[ERROR] {error}", file=sys.stderr)
@@ -363,7 +406,8 @@ def main() -> int:
 
     total_claims = len(manifest.get("claims", []))
     print(f"검증 대상: {draft_path.name}")
-    print(f"근거 인용: {len(used_claim_ids)} / {total_claims} claim")
+    print(f"근거 인용: {len(used_claim_ids)} / {total_claims} claim"
+          f" · 채점 항목 {len(used_criteria)} / {len(criteria)}")
     for warning in warnings:
         print(f"  [WARN] {warning}")
     for failure in failures:

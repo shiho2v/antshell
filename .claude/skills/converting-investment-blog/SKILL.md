@@ -14,8 +14,9 @@ allowed-tools: Read, Write, Bash
 
 1. **산술하지 않는다.** 모든 수치는 `manifest.json` / `claims.json` / `module-results` 에서 **그대로 인용**한다.
    보고서에 없는 숫자는 블로그에도 없다.
-2. **claim 없는 주장을 쓰지 않는다.** 수치나 판단을 담은 모든 문장은 `<!-- CLM-xxxx -->` 주석을 달아
-   출처 claim 을 지목한다. 지목할 claim 이 없으면 **그 문장을 쓰지 않는다.**
+2. **근거 없는 주장을 쓰지 않는다.** 수치나 판단을 담은 모든 문장은 근거 주석을 달아 출처를 지목한다.
+   `<!-- CLM-xxxx -->`(주장) · `<!-- MANIFEST -->`(원장 값) · `<!-- MOD:모듈/항목 -->`(채점 내역).
+   셋 중 어디에도 없으면 **그 문장을 쓰지 않는다.**
 3. **원본 데이터를 다시 읽지 않는다.** `data/raw/`, `data/normalized/`, 재무제표 전문, 보고서 HTML 은
    읽기 화이트리스트 밖이다 (아래 2절).
 4. **게이트 미통과 보고서는 변환하지 않는다.** `manifest.gates` 4개가 전부 `passed` 여야 한다.
@@ -72,6 +73,8 @@ PY
 | 투자 포인트 3 | 전 모듈 `strengths[]` 중 **가중치 높은 모듈 · evidence 2개 이상** 우선 3개 |
 | 리스크 3 | 전 모듈 `weaknesses[]` + `{TICKER}_risk.json` 우선 3개 |
 | 반론 재료 | 각 모듈 `counter_evidence[]`, claims 의 `counter_evidence_ids` |
+| **CANSLIM 등급표** | `{TICKER}_trend.json` 의 `criteria_scores` 7항목 (C·A·N·S·L·I·M) |
+| 기타 채점표 | valuation `VAL-01~06`, quality `QUA-01~06`, growth `GRO-01~07` |
 | 확인 못한 것 | `claim_type == "unknown"` claim + `manifest.unsupported_items` + 모듈 `unknowns[]` |
 | 출처 표 | `manifest.sources[]` (기계적으로 전량 옮긴다) |
 

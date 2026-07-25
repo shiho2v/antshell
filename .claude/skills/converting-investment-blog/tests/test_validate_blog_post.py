@@ -67,6 +67,18 @@ def write_draft(tmp_path: Path, body: str, title: str = "테스트기업(009240)
     return draft_path
 
 
+MINIMAL_TREND_MODULE = {
+    "module": "trend",
+    "criteria_scores": [
+        {"criterion_id": "TRD-C", "name": "C — 최근 분기 실적", "type": "auto",
+         "level": 0, "weight": 15, "metric": "eps_yoy_q", "metric_value": -72.68},
+        {"criterion_id": "TRD-A", "name": "A — 연간 이익 성장", "type": "auto",
+         "level": None, "weight": 15, "metric": "op_cagr_3y", "metric_value": None,
+         "na_reason": "기준연도 영업적자로 정의 불가"},
+    ],
+}
+
+
 @pytest.fixture
 def data_dir(tmp_path: Path) -> Path:
     directory = tmp_path / "data"
@@ -74,6 +86,11 @@ def data_dir(tmp_path: Path) -> Path:
     manifest_path = directory / f"{TICKER}_manifest.json"
     manifest_path.write_text(
         json.dumps(MINIMAL_MANIFEST, ensure_ascii=False), encoding="utf-8"
+    )
+    module_dir = directory / "module-results"
+    module_dir.mkdir()
+    (module_dir / f"{TICKER}_trend.json").write_text(
+        json.dumps(MINIMAL_TREND_MODULE, ensure_ascii=False), encoding="utf-8"
     )
     return directory
 
@@ -181,6 +198,37 @@ def test_list_items_are_separate_units(tmp_path: Path, data_dir: Path) -> None:
     result = run_validator(write_draft(tmp_path, body), data_dir)
     assert result.returncode == 1
     assert "근거 주석" in result.stdout
+
+
+def test_criterion_annotation_passes(tmp_path: Path, data_dir: Path) -> None:
+    """MOD 주석은 module-results 의 criteria_scores 값을 인용할 수 있게 한다."""
+    body = ("\n## 5. CANSLIM\n\n| 항목 | 값 | 등급 |\n|---|---|---|\n"
+            "| C | -72.7% | 0 |<!-- MOD:trend/TRD-C -->\n")
+    result = run_validator(write_draft(tmp_path, body), data_dir)
+    assert result.returncode == 0, result.stdout
+    assert "채점 항목 1" in result.stdout
+
+
+def test_dangling_criterion_fails(tmp_path: Path, data_dir: Path) -> None:
+    body = ("\n## 5. CANSLIM\n\n| C | -72.7% | 0 |<!-- MOD:trend/TRD-Z -->\n")
+    result = run_validator(write_draft(tmp_path, body), data_dir)
+    assert result.returncode == 1
+    assert "존재하지 않는 채점 항목" in result.stdout
+
+
+def test_criterion_annotation_rejects_unknown_number(tmp_path: Path, data_dir: Path) -> None:
+    """MOD 는 '채점표를 그대로 옮겼다'는 선언이므로 원장 밖 숫자를 막는다."""
+    body = ("\n## 5. CANSLIM\n\n| C | -88.8% | 0 |<!-- MOD:trend/TRD-C -->\n")
+    result = run_validator(write_draft(tmp_path, body), data_dir)
+    assert result.returncode == 1
+    assert "-88.8" in result.stdout
+
+
+def test_na_criterion_needs_no_number(tmp_path: Path, data_dir: Path) -> None:
+    body = ("\n## 5. CANSLIM\n\n| A | N/A | — | 기준연도 영업적자로 정의 불가 |"
+            "<!-- MOD:trend/TRD-A -->\n")
+    result = run_validator(write_draft(tmp_path, body), data_dir)
+    assert result.returncode == 0, result.stdout
 
 
 def test_ticker_mismatch_is_execution_error(tmp_path: Path, data_dir: Path) -> None:

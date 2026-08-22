@@ -1,0 +1,177 @@
+{
+  "ticker": "009240",
+  "as_of": "2026-07-26",
+  "base_url": "https://raw.githubusercontent.com/shiho2v/antshell/main/docs/blog/assets",
+  "generated_at": "2026-07-26T00:25:56",
+  "charts": [
+    {
+      "name": "annual_performance",
+      "file": "annual_performance.png",
+      "title": "연간 매출과 영업이익",
+      "source": "DART 연결(CFS) 사업보고서 연간값",
+      "note": "연간값이다. 분기 추이가 아니다.",
+      "data": [
+        {
+          "label": "2022",
+          "revenue_billion": 20009.1,
+          "operating_income_billion": -216.9
+        },
+        {
+          "label": "2023",
+          "revenue_billion": 19669.5,
+          "operating_income_billion": 19.5
+        },
+        {
+          "label": "2024",
+          "revenue_billion": 19083.9,
+          "operating_income_billion": 312.3
+        },
+        {
+          "label": "2025",
+          "revenue_billion": 17445.4,
+          "operating_income_billion": 184.9
+        }
+      ],
+      "as_of": "2026-07-26",
+      "relative_path": "assets/009240/annual_performance.png",
+      "url": "https://raw.githubusercontent.com/shiho2v/antshell/main/docs/blog/assets/009240/annual_performance.png"
+    },
+    {
+      "name": "relative_performance",
+      "file": "relative_performance.png",
+      "title": "주가와 KOSPI 비교",
+      "source": "pykrx(비공식 래퍼) 일별 종가 — 시작일을 100 으로 재기준화",
+      "note": "가격 수준이 아니라 시작일 대비 변화율 비교다.",
+      "data": {
+        "window_start": "2026-01-27",
+        "window_end": "2026-07-24",
+        "price_end_rebased": 84.63,
+        "index_end_rebased": 131.58
+      },
+      "as_of": "2026-07-26",
+      "relative_path": "assets/009240/relative_performance.png",
+      "url": "https://raw.githubusercontent.com/shiho2v/antshell/main/docs/blog/assets/009240/relative_performance.png"
+    },
+    {
+      "name": "canslim_grades",
+      "file": "canslim_grades.png",
+      "title": "CANSLIM 7항목 채점",
+      "source": "module-results trend 모듈 criteria_scores",
+      "note": "N/A 는 0 점이 아니라 미채점이다.",
+      "data": [
+        {
+          "criterion_id": "TRD-C",
+          "level": 0,
+          "metric": "eps_yoy_q",
+          "metric_value": -72.68,
+          "na_reason": null
+        },
+        {
+          "criterion_id": "TRD-A",
+          "level": null,
+          "metric": "op_cagr_3y",
+          "metric_value": null,
+          "na_reason": "기준연도(2022) 값이 0 이하이거나 최종값이 음수 — CAGR 이 정의되지 않는다"
+        },
+        {
+          "criterion_id": "TRD-N",
+          "level": 0,
+          "metric": "pct_from_52w_high",
+          "metric_value": -30.66,
+          "na_reason": null
+        },
+        {
+          "criterion_id": "TRD-S",
+          "level": 0,
+          "metric": "volume_ratio_vs_60d",
+          "metric_value": 0.63,
+          "na_reason": null
+        },
+        {
+          "criterion_id": "TRD-L",
+          "level": 0,
+          "metric": "rs_vs_index_6m_pp",
+          "metric_value": -46.95,
+          "na_reason": null
+        },
+        {
+          "criterion_id": "TRD-I",
+          "level": 1,
+          "metric": "inst_foreign_net_60d_to_mktcap",
+          "metric_value": -0.352,
+          "na_reason": null
+        },
+        {
+          "criterion_id": "TRD-M",
+          "level": 3,
+          "metric": "index_vs_ma200_pct",
+          "metric_value": 18.06,
+          "na_reason": null
+        }
+      ],
+      "as_of": "2026-07-26",
+      "relative_path": "assets/009240/canslim_grades.png",
+      "url": "https://raw.githubusercontent.com/shiho2v/antshell/main/docs/blog/assets/009240/canslim_grades.png"
+    },
+    {
+      "name": "module_scores",
+      "file": "module_scores.png",
+      "title": "모듈별 점수와 가중치",
+      "source": "manifest.modules (score_modules.py 산출)",
+      "note": "점수는 Python 이 계산한 값이다.",
+      "data": [
+        {
+          "module": "trend",
+          "score": 22.7,
+          "weight": 5.0,
+          "counted_in_composite": true
+        },
+        {
+          "module": "growth",
+          "score": 37.3,
+          "weight": 10.0,
+          "counted_in_composite": true
+        },
+        {
+          "module": "moat",
+          "score": 39.6,
+          "weight": 15.0,
+          "counted_in_composite": true
+        },
+        {
+          "module": "valuation",
+          "score": 50.0,
+          "weight": 25.0,
+          "counted_in_composite": true
+        },
+        {
+          "module": "catalyst",
+          "score": 55.0,
+          "weight": null,
+          "counted_in_composite": false
+        },
+        {
+          "module": "risk",
+          "score": 60.7,
+          "weight": 15.0,
+          "counted_in_composite": true
+        },
+        {
+          "module": "quality",
+          "score": 64.7,
+          "weight": 20.0,
+          "counted_in_composite": true
+        },
+        {
+          "module": "business",
+          "score": 93.3,
+          "weight": 10.0,
+          "counted_in_composite": true
+        }
+      ],
+      "as_of": "2026-07-26",
+      "relative_path": "assets/009240/module_scores.png",
+      "url": "https://raw.githubusercontent.com/shiho2v/antshell/main/docs/blog/assets/009240/module_scores.png"
+    }
+  ]
+}

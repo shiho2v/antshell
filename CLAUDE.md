@@ -24,9 +24,9 @@
 
 ## 현재 진행 주차
 <!-- 매주 발표자가 업데이트 -->
-CURRENT_WEEK=04
-CURRENT_PRESENTER=김비오
-CURRENT_CHAPTER=Ch.04 (2/2)
+CURRENT_WEEK=06
+CURRENT_PRESENTER=양재호
+CURRENT_CHAPTER=Ch.07 (1/2)
 
 ## 새로운 팀원이라면
 `docs/setup/ONBOARDING.md` 를 먼저 읽으세요.

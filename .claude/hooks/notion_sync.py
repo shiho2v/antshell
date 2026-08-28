@@ -159,7 +159,7 @@ log_entry = f"[{datetime.now().strftime('%Y-%m-%d %H:%M')}] Week{week} | {branch
 
 try:
     append_to_notion(api_key, page_id, blocks)
-    print(f"[notion_sync] ✓ Notion 기록 완료 (Week {week} | {branch} | {sha})")
+    print(f"[notion_sync] OK Notion 기록 완료 (Week {week} | {branch} | {sha})")
 except Exception as e:
     print(f"[notion_sync] Notion 기록 실패 → 로컬 로그 저장: {e}", file=sys.stderr)
     write_fallback_log(log_entry)

@@ -12,6 +12,8 @@ Claude Code SessionEnd 훅 스크립트
 import json
 import os
 import sys
+import urllib.request
+import urllib.error
 from datetime import datetime
 from pathlib import Path
 
@@ -20,7 +22,59 @@ SAVE_SUBDIR = "sessions"       # 프로젝트 루트 기준 하위 폴더명
 MAX_ENTRIES = 10               # 최대 보관 세션 개수
 FILE_PREFIX = "sessions_"      # 파일명 접두사
 TITLE_MAX_LEN = 50             # 제목 최대 길이
+GITHUB_REPO = "shiho2v/antshell"
+GITHUB_ISSUE_LABEL = "session-log"
 # =================
+
+
+def get_env(key: str) -> str:
+    val = os.environ.get(key, "")
+    if not val:
+        try:
+            env_path = get_project_dir() / ".env"
+            with open(env_path, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith(key + "=") and not line.startswith("#"):
+                        val = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        break
+        except (FileNotFoundError, OSError):
+            pass
+    return val
+
+
+def create_github_issue(record: dict) -> None:
+    token = get_env("GITHUB_TOKEN")
+    if not token or token.startswith("ghp_xxx"):
+        return
+
+    title = f"[세션 완료] {record['title']}"
+    body = (
+        f"**session_id:** `{record['session_id']}`\n"
+        f"**종료 사유:** {record['reason']}\n"
+        f"**작업 디렉토리:** `{record['cwd']}`\n"
+        f"**종료 시각:** {record['ended_at']}\n"
+    )
+    payload = json.dumps({
+        "title": title,
+        "body": body,
+        "labels": [GITHUB_ISSUE_LABEL],
+    }).encode()
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/{GITHUB_REPO}/issues",
+        data=payload,
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        urllib.request.urlopen(req, timeout=5)
+    except urllib.error.HTTPError:
+        pass
 
 
 def get_project_dir() -> Path:
@@ -122,6 +176,8 @@ def main() -> None:
 
     new_file = save_records(save_dir, records, datetime.now())
     cleanup_old_file(old_file, new_file)
+
+    create_github_issue(record)
 
     sys.exit(0)
 

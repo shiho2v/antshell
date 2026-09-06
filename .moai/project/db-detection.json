@@ -1,0 +1,20 @@
+{
+  "detected_at": "2026-09-06",
+  "method": "grep -rniE across backend/, frontend/src/, scripts/ for DB engine keywords + query-pattern check",
+  "declared": {
+    "engine": "PostgreSQL (Supabase-managed)",
+    "evidence": [".env.example: DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY"]
+  },
+  "actual_usage": {
+    "auth_only": true,
+    "evidence": [
+      "frontend/src/lib/supabase.ts:7,9 — createBrowserClient (auth client factory only)",
+      "frontend/src/app/login/page.tsx:27 — supabase.auth.signInWithPassword",
+      "frontend/src/app/signup/page.tsx:26 — supabase.auth.signUp",
+      "frontend/src/app/dashboard/page.tsx:48,64 — supabase.auth.getUser / signOut",
+      "backend/app/auth.py:22-25 — validates JWT via Supabase /auth/v1/user (no local DB query)"
+    ],
+    "query_code_found": false,
+    "note": "No SELECT/INSERT/.from() table-query calls found anywhere in backend/ or frontend/. Supabase Postgres is provisioned for auth only; no application data is stored in it. See tech.md §5 and structure.md §1 for the wider finding that the dashboard uses hardcoded mock data instead of any live data source."
+  }
+}

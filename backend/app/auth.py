@@ -4,11 +4,10 @@
 # Week   : 06 | Ch.07 (1/2)
 # Created: 2026-08-22
 # =============================================================
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import httpx
-
 from app import config
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 bearer = HTTPBearer()
 

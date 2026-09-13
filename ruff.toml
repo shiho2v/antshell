@@ -1,0 +1,23 @@
+# ruff 설정 — CI(.github/workflows/ci.yml)의 `ruff check backend/` 가 이 파일을 읽는다.
+#
+# select 를 지정하지 않아 ruff 기본 규칙을 그대로 쓴다. 아래 항목만 예외로 둔다.
+
+[lint.flake8-bugbear]
+# FastAPI 는 의존성 주입을 인자 기본값으로 선언하는 것이 공식 패턴이다.
+#
+#     def endpoint(user = Depends(get_current_user)): ...
+#
+# B008("인자 기본값에서 함수를 호출하지 말 것")은 이 패턴을 오탐으로 잡는다.
+# 원래 규칙이 막으려는 것은 기본값이 한 번만 평가되어 공유되는 사고인데,
+# FastAPI 는 요청마다 이 호출을 다시 해석하므로 해당하지 않는다.
+extend-immutable-calls = [
+  "fastapi.Depends",
+  "fastapi.Query",
+  "fastapi.Path",
+  "fastapi.Body",
+  "fastapi.Header",
+  "fastapi.Security",
+  "fastapi.Cookie",
+  "fastapi.Form",
+  "fastapi.File",
+]

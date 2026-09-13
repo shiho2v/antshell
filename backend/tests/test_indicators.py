@@ -14,7 +14,6 @@ import ast
 from pathlib import Path
 
 import pytest
-
 from app import indicators
 
 MODULE_PATH = Path(indicators.__file__)

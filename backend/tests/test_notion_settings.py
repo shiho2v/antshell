@@ -11,9 +11,8 @@
 """
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app import auth, main
+from fastapi.testclient import TestClient
 
 FAKE_USER_ID = "11111111-2222-3333-4444-555555555555"
 FAKE_TOKEN = "fake-jwt-token"

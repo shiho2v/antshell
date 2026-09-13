@@ -4,23 +4,22 @@
 # Week   : 07 | Ch.07 (2/2)
 # Created: 2026-08-22
 # =============================================================
-from fastapi import Depends, FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import httpx
-import os
 import json
+import os
 import re
-import urllib.request
 import urllib.error
-from datetime import datetime
+import urllib.request
+from datetime import datetime, timezone
 from pathlib import Path
+
+import httpx
 
 # config 를 가장 먼저 import 해야 한다. 모듈 본문에서 루트 .env 를 os.environ 에
 # 채우므로, 아래 os.getenv 호출과 auth 모듈이 그 값을 볼 수 있다.
-from app import config
-from app import auth
-from app import indicators
+from app import auth, config, indicators
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 app = FastAPI(title="Antshell API")
 
@@ -198,7 +197,9 @@ async def save_report_to_notion(
             detail="Notion 연동이 설정되지 않았습니다. 설정 페이지에서 먼저 연결하세요.",
         )
 
-    now = datetime.now().strftime("%Y-%m-%d %H:%M")
+    # astimezone() 으로 실행 환경의 지역 시간을 쓴다. 표기용 문자열이라 UTC 로
+    # 바꾸면 한국 사용자에게 9시간 어긋난 시각이 보인다.
+    now = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M")
     summary = f"[종목 분석] {req.name} ({req.code}) — {req.price}원 {req.change}  |  {now}"
     blocks = [
         {

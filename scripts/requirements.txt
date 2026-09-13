@@ -1,0 +1,27 @@
+# Dependencies for the offline OHLCV collection script only.
+#
+# Per SPEC-CHART-001 REQ-007 / REQ-009 this is deliberately NOT in
+# backend/requirements.txt. The backend never imports pykrx; collection happens
+# only when a developer runs scripts/fetch_ohlcv.py by hand.
+#
+# Install:
+#     pip install -r scripts/requirements.txt
+#
+# Without installing, `python scripts/fetch_ohlcv.py --sample` still works
+# (sample generation uses the standard library only).
+#
+# NOTE: keep this file ASCII-only. pip decodes requirements files with the
+# system locale encoding (cp949 on Korean Windows), so non-ASCII comments
+# break `pip install -r` for teammates on a non-UTF-8 locale.
+
+pykrx==1.0.45
+
+# pykrx 1.0.45 imports pkg_resources at module load.
+#   - Python 3.13 no longer ships setuptools by default.
+#   - setuptools 82 removed pkg_resources entirely (81 deprecated it).
+# Both together make `from pykrx import stock` fail with ModuleNotFoundError,
+# so the upper bound is load-bearing, not cosmetic. Verified on 2026-09-13:
+# setuptools 82.0.1 has no pkg_resources; 81.x still provides it.
+# Drop this pin once pykrx stops importing pkg_resources.
+setuptools>=70.0.0,<82
+

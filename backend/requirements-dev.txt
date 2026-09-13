@@ -1,0 +1,16 @@
+# Development-only dependencies (test runner + coverage).
+#
+# Per SPEC-CHART-001 REQ-009 these are deliberately NOT in
+# backend/requirements.txt: they are never imported by the running service, so
+# they do not count as runtime dependencies.
+#
+# Install:
+#     pip install -r backend/requirements-dev.txt
+#
+# NOTE: keep this file ASCII-only. pip decodes requirements files with the
+# system locale encoding (cp949 on Korean Windows), so non-ASCII comments
+# break `pip install -r` for teammates on a non-UTF-8 locale.
+
+pytest==8.3.4
+pytest-cov==6.0.0
+httpx==0.27.0

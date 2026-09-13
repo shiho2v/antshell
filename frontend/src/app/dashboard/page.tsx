@@ -8,7 +8,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
+import StockChart from '@/components/StockChart'
 import type { User } from '@supabase/supabase-js'
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
@@ -42,6 +44,8 @@ export default function DashboardPage() {
   const [saveMsg, setSaveMsg] = useState<string | null>(null)
   const [issues, setIssues] = useState<GithubIssue[]>([])
   const [issuesLoading, setIssuesLoading] = useState(true)
+  // SPEC-CHART-001 REQ-011: 선택한 종목의 차트를 표시한다.
+  const [selectedStock, setSelectedStock] = useState<typeof MOCK_STOCKS[0] | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -69,18 +73,35 @@ export default function DashboardPage() {
     setSavingCode(stock.code)
     setSaveMsg(null)
     try {
+      // 저장 대상이 사용자별 페이지로 바뀌었으므로 백엔드가 호출자를 식별해야 한다.
+      const supabase = createClient()
+      const { data: sessionData } = await supabase.auth.getSession()
+      const accessToken = sessionData.session?.access_token
+      if (!accessToken) {
+        router.replace('/login')
+        return
+      }
+
       const res = await fetch(`${API}/api/report/notion`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify(stock),
       })
       const data = await res.json()
-      setSaveMsg(res.ok ? data.message : `오류: ${data.detail}`)
+      if (res.status === 409) {
+        // 아직 연동을 설정하지 않은 경우 — 설정 페이지로 안내한다.
+        setSaveMsg('Notion 연동이 필요합니다. 우측 상단 설정에서 연결하세요.')
+      } else {
+        setSaveMsg(res.ok ? data.message : `오류: ${data.detail}`)
+      }
     } catch {
       setSaveMsg('서버 연결 실패')
     } finally {
       setSavingCode(null)
-      setTimeout(() => setSaveMsg(null), 4000)
+      setTimeout(() => setSaveMsg(null), 5000)
     }
   }
 
@@ -93,6 +114,12 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold">불타는 개미지옥</h1>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400">{user.email}</span>
+          <Link
+            href="/settings"
+            className="rounded-lg bg-gray-800 px-4 py-1.5 text-sm hover:bg-gray-700"
+          >
+            설정
+          </Link>
           <button
             onClick={handleLogout}
             className="rounded-lg bg-gray-800 px-4 py-1.5 text-sm hover:bg-gray-700"
@@ -141,7 +168,13 @@ export default function DashboardPage() {
             </thead>
             <tbody className="divide-y divide-gray-800">
               {MOCK_STOCKS.map(s => (
-                <tr key={s.code}>
+                <tr
+                  key={s.code}
+                  onClick={() => setSelectedStock(s)}
+                  className={`cursor-pointer transition-colors hover:bg-gray-800 ${
+                    selectedStock?.code === s.code ? 'bg-gray-800' : ''
+                  }`}
+                >
                   <td className="py-3">
                     <p className="font-medium">{s.name}</p>
                     <p className="text-xs text-gray-500">{s.code}</p>
@@ -152,7 +185,11 @@ export default function DashboardPage() {
                   </td>
                   <td className="py-3 text-right">
                     <button
-                      onClick={() => saveToNotion(s)}
+                      onClick={e => {
+                        // 행 클릭(차트 선택)까지 함께 발생하지 않도록 막는다.
+                        e.stopPropagation()
+                        saveToNotion(s)
+                      }}
                       disabled={savingCode === s.code}
                       className="rounded-md bg-indigo-700 px-2 py-1 text-xs hover:bg-indigo-600 disabled:opacity-40"
                     >
@@ -163,6 +200,20 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* 주가 차트 · 기술지표 (SPEC-CHART-001) */}
+        <div className="col-span-3">
+          {selectedStock ? (
+            <StockChart stockCode={selectedStock.code} stockName={selectedStock.name} />
+          ) : (
+            <div className="rounded-2xl bg-gray-900 p-6">
+              <h2 className="mb-2 text-lg font-semibold">주가 차트</h2>
+              <p className="text-sm text-gray-500">
+                위 보유 종목에서 종목을 선택하면 캔들스틱 차트와 이동평균선·거래량이 표시됩니다.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 최신 뉴스 */}

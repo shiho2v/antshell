@@ -1,5 +1,11 @@
-fastapi==0.111.0
-uvicorn[standard]==0.30.1
-python-jose[cryptography]==3.3.0
+# NOTE: ASCII only. pip reads this file with the system locale encoding,
+# so non-ASCII comments break `pip install -r` on Korean Windows (cp949).
+#
+# python-jose was removed: nothing in backend/ imports jose or jwt.
+# Token validation is an HTTP call to Supabase /auth/v1/user (see app/auth.py),
+# so no JWT is decoded locally. The package only pulled in vulnerable
+# transitive deps (ecdsa PYSEC-2026-1325 has no fix version at all).
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
 httpx==0.27.0
-python-dotenv==1.0.1
+python-dotenv==1.2.2

@@ -24,6 +24,9 @@ venv/
 env/
 .pytest_cache/
 .ruff_cache/
+.coverage
+coverage.json
+htmlcov/
 *.log
 *.sqlite3
 *.db
@@ -45,6 +48,11 @@ yarn-error.log*
 .claude/cache/
 .claude/checkpoints/
 .claude/settings.local.json
+
+# =====================
+# MoAI-ADK
+# =====================
+.moai/state/
 
 # =====================
 # OS / 에디터

@@ -57,8 +57,10 @@ jobs:
       # 16.3.0-preview.10 까지라, 해소하려면 Next.js 14 -> 16 메이저 2단계 상향이
       # 필요하다. 이는 별도 과제로 다룬다.
       #
-      # 실패해도 job 은 통과하지만 단계는 빨갛게 표시되므로 부채는 계속 보인다.
-      # 되돌리려면 아래 continue-on-error 두 줄을 지우면 된다.
+      # 실패해도 job 은 통과한다. 단계 자체는 success 로 기록되고, 실패 사실은
+      # 워크플로 실행 화면의 ANNOTATIONS 에 "Process completed with exit code 1"
+      # 로 남는다. 부채 현황은 그 어노테이션이나 단계 로그에서 확인한다.
+      # 다시 차단 게이트로 되돌리려면 아래 continue-on-error 두 줄을 지우면 된다.
       - name: Python 취약점 스캔
         continue-on-error: true
         run: pip install pip-audit && pip-audit -r backend/requirements.txt

@@ -115,6 +115,12 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400">{user.email}</span>
           <Link
+            href="/portfolio"
+            className="rounded-lg bg-gray-800 px-4 py-1.5 text-sm hover:bg-gray-700"
+          >
+            포트폴리오 분석
+          </Link>
+          <Link
             href="/settings"
             className="rounded-lg bg-gray-800 px-4 py-1.5 text-sm hover:bg-gray-700"
           >

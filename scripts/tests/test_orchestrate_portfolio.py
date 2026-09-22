@@ -22,7 +22,7 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
-import orchestrate_portfolio  # noqa: E402  (sys.path 조정 후에 import 해야 한다)
+import orchestrate_portfolio
 
 PROJECT_ROOT = SCRIPTS_DIR.parent
 EXAMPLE_PORTFOLIO = PROJECT_ROOT / "data" / "portfolio.example.json"

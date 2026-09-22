@@ -20,14 +20,40 @@ import argparse
 import datetime as dt
 import html
 import json
+import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 OUTPUTS_DIR = PROJECT_ROOT / "outputs"
+DEFAULT_ANALYSIS_PATH = DATA_DIR / "portfolio_analysis.json"
+
+# spec.md §1.3: 서브에이전트가 읽는 입력(data/{code}_market.json 등)이
+# 존재하는 종목으로 한정한다. 이 목록 밖 코드가 섞이면 분석을 시작하지 않는다(REQ-003).
+STOCK_CODES = ("005930", "000660", "009150", "008490")
+
+SCHEMA_VERSION = "1"
+
+# spec.md §4 「필수 키 집합」 — REQ-002(저장 전 검사)·REQ-004(--sample 검사)·
+# REQ-007(백엔드 읽기 시 검사, M2)이 공통으로 참조하는 유일한 정의.
+REQUIRED_TOP_LEVEL_KEYS = (
+    "schema_version",
+    "source",
+    "generated_date",
+    "portfolio_file",
+    "portfolio_name",
+    "as_of",
+    "valuation",
+    "risk",
+    "allocation",
+)
+VALUATION_MIN_KEYS = ("stock_code", "verdict", "score")
+RISK_MIN_KEYS = ("stock_code", "overall")
+ALLOCATION_MIN_KEYS = ("stock_code", "actual_weight_pct", "action", "drift_pct", "rebalance_amount")
 
 ORCHESTRATOR_PROMPT_TEMPLATE = """\
 아래 세 서브에이전트를 반드시 하나의 메시지 안에서 함께 호출해 병렬 실행하세요 (순차 호출 금지):
@@ -122,6 +148,216 @@ def run_orchestrator(prompt: str) -> dict:
         ) from e
 
 
+def validate_allowlist(portfolio: dict) -> list:
+    """§1.3 허용 목록 검사. 서브에이전트 호출 전에 먼저 실행해야 한다(REQ-003).
+
+    허용 목록 밖 종목 코드 리스트를 돌려준다. 빈 리스트면 통과.
+    """
+    holdings = portfolio.get("holdings", [])
+    return [h.get("stock_code") for h in holdings if h.get("stock_code") not in STOCK_CODES]
+
+
+def validate_schema(document: dict) -> list:
+    """spec.md §4 「필수 키 집합」 다섯 조건을 검사해 위반 사유 목록을 돌려준다.
+
+    빈 리스트면 다섯 조건을 모두 만족한다. REQ-002(저장 전)·REQ-004(--sample)가
+    이 함수를 공유하며, M2의 REQ-007(백엔드 읽기 시 검사)도 같은 정의를 구현해야 한다.
+    """
+    errors = []
+
+    missing_top = [k for k in REQUIRED_TOP_LEVEL_KEYS if k not in document]
+    if missing_top:
+        errors.append(f"최상위 키 누락: {', '.join(missing_top)}")
+        return errors
+
+    blocks = {}
+    for block_name in ("valuation", "risk", "allocation"):
+        block = document.get(block_name)
+        if not isinstance(block, dict):
+            errors.append(f"'{block_name}'은 객체가 아닙니다")
+            continue
+        results = block.get("results")
+        if not isinstance(results, list):
+            errors.append(f"'{block_name}.results'는 리스트가 아닙니다")
+            continue
+        blocks[block_name] = results
+
+    if len(blocks) < 3:
+        return errors
+
+    numeric_fields = {
+        "risk.total_market_value": document["risk"].get("total_market_value"),
+        "allocation.total_asset": document["allocation"].get("total_asset"),
+        "allocation.cash": document["allocation"].get("cash"),
+    }
+    for field_name, value in numeric_fields.items():
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            errors.append(f"'{field_name}'은 숫자가 아닙니다: {value!r}")
+
+    lengths = {name: len(results) for name, results in blocks.items()}
+    if len(set(lengths.values())) > 1:
+        errors.append(f"results 리스트 길이 불일치: {lengths}")
+
+    min_keys_by_block = {
+        "valuation": VALUATION_MIN_KEYS,
+        "risk": RISK_MIN_KEYS,
+        "allocation": ALLOCATION_MIN_KEYS,
+    }
+    for block_name, min_keys in min_keys_by_block.items():
+        for idx, item in enumerate(blocks[block_name]):
+            if not isinstance(item, dict):
+                errors.append(f"'{block_name}.results[{idx}]'는 객체가 아닙니다")
+                continue
+            missing = [k for k in min_keys if k not in item]
+            if missing:
+                errors.append(f"'{block_name}.results[{idx}]' 필수 키 누락: {', '.join(missing)}")
+
+    return errors
+
+
+def assemble_document(merged: dict, source: str, generated_date: str, portfolio_file: str) -> dict:
+    """저장 단계에서 4개 메타 필드를 병합 결과에 덧붙인다(REQ-001).
+
+    나머지(portfolio_name·as_of·valuation·risk·allocation)는 merged 를 그대로 보존한다.
+    """
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "source": source,
+        "generated_date": generated_date,
+        "portfolio_file": portfolio_file,
+        **merged,
+    }
+
+
+def save_json_atomic(path: Path, document: dict) -> None:
+    """같은 디렉터리의 임시 파일에 먼저 기록한 뒤 교체한다(REQ-001).
+
+    교체(os.replace) 이전 단계에서 예외가 나면 대상 파일은 그대로 보존되고
+    임시 파일도 정리된다(AC-002).
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(dir=str(path.parent), prefix=f".{path.name}.", suffix=".tmp")
+    tmp_path = Path(tmp_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
+            json.dump(document, tmp_file, ensure_ascii=False, indent=2)
+            tmp_file.write("\n")
+        os.replace(tmp_name, path)
+    except BaseException:
+        if tmp_path.exists():
+            tmp_path.unlink()
+        raise
+
+
+def generate_sample(portfolio: dict, generated_date: str) -> dict:
+    """--sample 모드의 결정론적 분석 결과 생성(REQ-004).
+
+    claude 서브에이전트를 호출하지 않고 입력 포트폴리오 파일만으로
+    §4 「필수 키 집합」을 만족하는 병합 결과를 만든다. 같은 입력·같은 실행일이면
+    항상 같은 바이트를 만든다(난수·시각 미사용). 보유 종목 순서 기준 짝수 인덱스는
+    정상 판정, 홀수 인덱스는 unknown 판정으로 고정해 판정 값 분포 요구를 충족한다.
+    """
+    holdings = portfolio.get("holdings", [])
+    if not holdings:
+        raise ValueError("portfolio.holdings가 비어 있습니다.")
+
+    cash = _num(portfolio.get("cash"), 0.0)
+
+    enriched = []
+    for holding in holdings:
+        quantity = _num(holding.get("quantity"), 0.0)
+        avg_price = _num(holding.get("avg_price"), 0.0)
+        enriched.append(
+            {
+                "stock_code": holding.get("stock_code", ""),
+                "name": holding.get("name", ""),
+                "quantity": quantity,
+                "avg_price": avg_price,
+                "market_value": quantity * avg_price,
+                "target_weight_pct": _num(holding.get("target_weight_pct"), 0.0),
+            }
+        )
+
+    total_holdings_value = sum(item["market_value"] for item in enriched)
+    total_asset = total_holdings_value + cash
+
+    valuation_results, risk_results, allocation_results = [], [], []
+
+    for idx, item in enumerate(enriched):
+        known = idx % 2 == 0
+        actual_weight_alloc = round(item["market_value"] / total_asset * 100, 2) if total_asset else 0.0
+        actual_weight_risk = (
+            round(item["market_value"] / total_holdings_value * 100, 2) if total_holdings_value else 0.0
+        )
+        drift = round(actual_weight_alloc - item["target_weight_pct"], 2)
+
+        if known:
+            verdict, score, overall = "적정", 60, "medium"
+            action = "유지" if abs(drift) < 1 else ("매도" if drift > 0 else "매수")
+            basis = "샘플 생성 — 실제 에이전트 판정이 아닙니다"
+            rebalance_amount = round(item["target_weight_pct"] / 100 * total_asset - item["market_value"])
+        else:
+            verdict, score, overall, action = "unknown", 0, "unknown", "unknown"
+            basis = "샘플 생성 — 데이터 부족으로 판정 불가"
+            rebalance_amount = 0
+
+        valuation_results.append(
+            {
+                "stock_code": item["stock_code"],
+                "name": item["name"],
+                "revenue_growth_pct": None,
+                "op_income_growth_pct": None,
+                "verdict": verdict,
+                "score": score,
+                "basis": basis,
+            }
+        )
+        risk_results.append(
+            {
+                "stock_code": item["stock_code"],
+                "name": item["name"],
+                "market_value": item["market_value"],
+                "actual_weight_pct": actual_weight_risk,
+                "concentration": "중간" if known else "unknown",
+                "drawdown_from_52w": "0%" if known else "unknown",
+                "supply_flow": "중립" if known else "unknown",
+                "volume_state": "normal" if known else "unknown",
+                "risk_score": score,
+                "overall": overall,
+            }
+        )
+        allocation_results.append(
+            {
+                "stock_code": item["stock_code"],
+                "name": item["name"],
+                "current_price": item["avg_price"],
+                "market_value": item["market_value"],
+                "actual_weight_pct": actual_weight_alloc,
+                "target_weight_pct": item["target_weight_pct"],
+                "drift_pct": drift,
+                "action": action,
+                "rebalance_amount": rebalance_amount,
+            }
+        )
+
+    return {
+        "portfolio_name": portfolio.get("portfolio_name", "포트폴리오"),
+        "as_of": portfolio.get("as_of", generated_date),
+        "valuation": {"agent": "sample", "results": valuation_results},
+        "risk": {
+            "agent": "sample",
+            "total_market_value": total_holdings_value,
+            "results": risk_results,
+        },
+        "allocation": {
+            "agent": "sample",
+            "total_asset": total_asset,
+            "cash": cash,
+            "results": allocation_results,
+        },
+    }
+
+
 def _num(value, default: float = 0.0) -> float:
     # None/문자열 등 숫자 포맷팅(:,.0f, %)에 못 넣는 값을 안전하게 흡수한다.
     if isinstance(value, (int, float)):
@@ -211,30 +447,86 @@ def render_html(merged: dict) -> str:
 """
 
 
-def main() -> None:
+def parse_arguments(argv):
+    parser = argparse.ArgumentParser(description="포트폴리오 분석 에이전트 팀 오케스트레이터 (Ch.04 실습)")
+    parser.add_argument("--portfolio", required=True, help="포트폴리오 JSON 경로 (예: data/portfolio.example.json)")
+    parser.add_argument("--save", action="store_true", help="outputs/portfolio_report_YYYY-MM-DD.html로 저장")
+    parser.add_argument(
+        "--save-json",
+        type=Path,
+        default=DEFAULT_ANALYSIS_PATH,
+        help=f"분석 결과 JSON 저장 경로. 기본 {DEFAULT_ANALYSIS_PATH.relative_to(PROJECT_ROOT)}",
+    )
+    parser.add_argument(
+        "--sample",
+        action="store_true",
+        help="claude 서브에이전트를 호출하지 않고 결정론적 샘플 데이터를 생성한다(REQ-004).",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv=None) -> int:
     # Windows 콘솔이 cp1252 기본일 때 한글 print에서 UnicodeEncodeError가 나는 것을 방지한다.
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
         sys.stderr.reconfigure(encoding="utf-8")
 
-    parser = argparse.ArgumentParser(description="포트폴리오 분석 에이전트 팀 오케스트레이터 (Ch.04 실습)")
-    parser.add_argument("--portfolio", required=True, help="포트폴리오 JSON 경로 (예: data/portfolio.example.json)")
-    parser.add_argument("--save", action="store_true", help="outputs/portfolio_report_YYYY-MM-DD.html로 저장")
-    args = parser.parse_args()
+    args = parse_arguments(argv)
 
-    portfolio = load_portfolio(Path(args.portfolio))
-    prompt = build_prompt(portfolio)
-    merged = run_orchestrator(prompt)
+    try:
+        portfolio = load_portfolio(Path(args.portfolio))
+    except FileNotFoundError as e:
+        print(f"[orchestrate_portfolio] {e}", file=sys.stderr)
+        return 1
+
+    # REQ-003: 서브에이전트 호출/샘플 생성 이전에 허용 목록을 검사한다.
+    offending_codes = validate_allowlist(portfolio)
+    if offending_codes:
+        print(
+            f"[orchestrate_portfolio] 허용 목록 밖 종목 코드가 포함되어 있습니다: {', '.join(offending_codes)}",
+            file=sys.stderr,
+        )
+        return 1
+
+    generated_date = dt.date.today().isoformat()
+    source = "sample" if args.sample else "agent-team"
+
+    try:
+        if args.sample:
+            merged = generate_sample(portfolio, generated_date)
+        else:
+            prompt = build_prompt(portfolio)
+            merged = run_orchestrator(prompt)
+    except (RuntimeError, ValueError) as e:
+        print(f"[orchestrate_portfolio] 분석 실패: {e}", file=sys.stderr)
+        return 1
 
     print(json.dumps(merged, ensure_ascii=False, indent=2))
+
+    document = assemble_document(merged, source, generated_date, str(args.portfolio))
+    schema_errors = validate_schema(document)
+    if schema_errors:
+        print("[orchestrate_portfolio] 저장 전 스키마 검사 실패:", file=sys.stderr)
+        for err in schema_errors:
+            print(f"  - {err}", file=sys.stderr)
+        return 1
+
+    try:
+        save_json_atomic(Path(args.save_json), document)
+    except OSError as e:
+        print(f"[orchestrate_portfolio] 저장 실패: {e}", file=sys.stderr)
+        return 1
+    print(f"[orchestrate_portfolio] 저장됨: {args.save_json} (source={source})", file=sys.stderr)
 
     if args.save:
         OUTPUTS_DIR.mkdir(exist_ok=True)
         today = dt.date.today().isoformat()
         out_path = OUTPUTS_DIR / f"portfolio_report_{today}.html"
         out_path.write_text(render_html(merged), encoding="utf-8")
-        print(f"\n저장됨: {out_path}", file=sys.stderr)
+        print(f"저장됨: {out_path}", file=sys.stderr)
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -1,0 +1,154 @@
+{
+  "schema_version": "1",
+  "source": "sample",
+  "generated_date": "2026-09-22",
+  "portfolio_file": "data/portfolio.example.json",
+  "portfolio_name": "샘플 4종목 포트폴리오",
+  "as_of": "2026-07-25",
+  "valuation": {
+    "agent": "sample",
+    "results": [
+      {
+        "stock_code": "005930",
+        "name": "삼성전자",
+        "revenue_growth_pct": null,
+        "op_income_growth_pct": null,
+        "verdict": "적정",
+        "score": 60,
+        "basis": "샘플 생성 — 실제 에이전트 판정이 아닙니다"
+      },
+      {
+        "stock_code": "000660",
+        "name": "SK하이닉스",
+        "revenue_growth_pct": null,
+        "op_income_growth_pct": null,
+        "verdict": "unknown",
+        "score": 0,
+        "basis": "샘플 생성 — 데이터 부족으로 판정 불가"
+      },
+      {
+        "stock_code": "009150",
+        "name": "삼성전기",
+        "revenue_growth_pct": null,
+        "op_income_growth_pct": null,
+        "verdict": "적정",
+        "score": 60,
+        "basis": "샘플 생성 — 실제 에이전트 판정이 아닙니다"
+      },
+      {
+        "stock_code": "008490",
+        "name": "서흥",
+        "revenue_growth_pct": null,
+        "op_income_growth_pct": null,
+        "verdict": "unknown",
+        "score": 0,
+        "basis": "샘플 생성 — 데이터 부족으로 판정 불가"
+      }
+    ]
+  },
+  "risk": {
+    "agent": "sample",
+    "total_market_value": 27770000.0,
+    "results": [
+      {
+        "stock_code": "005930",
+        "name": "삼성전자",
+        "market_value": 4290000.0,
+        "actual_weight_pct": 15.45,
+        "concentration": "중간",
+        "drawdown_from_52w": "0%",
+        "supply_flow": "중립",
+        "volume_state": "normal",
+        "risk_score": 60,
+        "overall": "medium"
+      },
+      {
+        "stock_code": "000660",
+        "name": "SK하이닉스",
+        "market_value": 2520000.0,
+        "actual_weight_pct": 9.07,
+        "concentration": "unknown",
+        "drawdown_from_52w": "unknown",
+        "supply_flow": "unknown",
+        "volume_state": "unknown",
+        "risk_score": 0,
+        "overall": "unknown"
+      },
+      {
+        "stock_code": "009150",
+        "name": "삼성전기",
+        "market_value": 11360000.0,
+        "actual_weight_pct": 40.91,
+        "concentration": "중간",
+        "drawdown_from_52w": "0%",
+        "supply_flow": "중립",
+        "volume_state": "normal",
+        "risk_score": 60,
+        "overall": "medium"
+      },
+      {
+        "stock_code": "008490",
+        "name": "서흥",
+        "market_value": 9600000.0,
+        "actual_weight_pct": 34.57,
+        "concentration": "unknown",
+        "drawdown_from_52w": "unknown",
+        "supply_flow": "unknown",
+        "volume_state": "unknown",
+        "risk_score": 0,
+        "overall": "unknown"
+      }
+    ]
+  },
+  "allocation": {
+    "agent": "sample",
+    "total_asset": 32770000.0,
+    "cash": 5000000.0,
+    "results": [
+      {
+        "stock_code": "005930",
+        "name": "삼성전자",
+        "current_price": 71500.0,
+        "market_value": 4290000.0,
+        "actual_weight_pct": 13.09,
+        "target_weight_pct": 30.0,
+        "drift_pct": -16.91,
+        "action": "매수",
+        "rebalance_amount": 5541000
+      },
+      {
+        "stock_code": "000660",
+        "name": "SK하이닉스",
+        "current_price": 168000.0,
+        "market_value": 2520000.0,
+        "actual_weight_pct": 7.69,
+        "target_weight_pct": 25.0,
+        "drift_pct": -17.31,
+        "action": "unknown",
+        "rebalance_amount": 0
+      },
+      {
+        "stock_code": "009150",
+        "name": "삼성전기",
+        "current_price": 1420000.0,
+        "market_value": 11360000.0,
+        "actual_weight_pct": 34.67,
+        "target_weight_pct": 25.0,
+        "drift_pct": 9.67,
+        "action": "매도",
+        "rebalance_amount": -3167500
+      },
+      {
+        "stock_code": "008490",
+        "name": "서흥",
+        "current_price": 32000.0,
+        "market_value": 9600000.0,
+        "actual_weight_pct": 29.3,
+        "target_weight_pct": 20.0,
+        "drift_pct": 9.3,
+        "action": "unknown",
+        "rebalance_amount": 0
+      }
+    ]
+  }
+}

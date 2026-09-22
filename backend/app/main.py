@@ -375,3 +375,146 @@ def get_stock_news(code: str):
     if code not in news.NEWS_STOCK_CODES:
         raise HTTPException(status_code=404, detail="지원하지 않는 종목 코드입니다")
     return news.build_news_response(DATA_DIR, code)
+
+
+# =============================================================
+# SPEC-PORTFOLIO-001 — 포트폴리오 분석 모듈 (Week 10 / @정우준)
+#
+# scripts/orchestrate_portfolio.py 가 오프라인에서 생성해 커밋해 둔
+# data/portfolio_analysis.json 만 읽는다. 요청 처리 중 claude 실행·
+# subprocess·외부 네트워크 호출을 하지 않고 data/ 에 쓰지도 않는다 (REQ-008).
+# =============================================================
+
+PORTFOLIO_ANALYSIS_FILE = "portfolio_analysis.json"
+
+# spec.md §4 「필수 키 집합」 다섯 조건이 참조하는 정의.
+# scripts/orchestrate_portfolio.py 의 REQUIRED_TOP_LEVEL_KEYS 등과 같은 값을
+# 쓰지만 별도 상수로 둔다 — 백엔드는 스크립트를 import 하지 않는다(plan.md A.2).
+_PORTFOLIO_REQUIRED_TOP_LEVEL_KEYS = (
+    "schema_version",
+    "source",
+    "generated_date",
+    "portfolio_file",
+    "portfolio_name",
+    "as_of",
+    "valuation",
+    "risk",
+    "allocation",
+)
+_PORTFOLIO_VALUATION_MIN_KEYS = ("stock_code", "verdict", "score")
+_PORTFOLIO_RISK_MIN_KEYS = ("stock_code", "overall")
+_PORTFOLIO_ALLOCATION_MIN_KEYS = (
+    "stock_code",
+    "actual_weight_pct",
+    "action",
+    "drift_pct",
+    "rebalance_amount",
+)
+
+
+def _is_valid_portfolio_document(document) -> bool:
+    """spec.md §4 「필수 키 집합」 다섯 조건을 검사한다.
+
+    scripts/orchestrate_portfolio.py 의 validate_schema() 가 저장 전에 쓰는
+    것과 같은 다섯 조건이다. 두 계층이 다른 집합을 구현하면 저장은 통과하는데
+    서빙이 500을 내는(또는 그 반대의) 비대칭이 생긴다(spec.md §4).
+    """
+    if not isinstance(document, dict):
+        return False
+    if any(key not in document for key in _PORTFOLIO_REQUIRED_TOP_LEVEL_KEYS):
+        return False
+
+    blocks = {}
+    for block_name in ("valuation", "risk", "allocation"):
+        block = document.get(block_name)
+        if not isinstance(block, dict):
+            return False
+        results = block.get("results")
+        if not isinstance(results, list):
+            return False
+        blocks[block_name] = results
+
+    numeric_fields = (
+        document["risk"].get("total_market_value"),
+        document["allocation"].get("total_asset"),
+        document["allocation"].get("cash"),
+    )
+    for value in numeric_fields:
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return False
+
+    if len({len(results) for results in blocks.values()}) > 1:
+        return False
+
+    min_keys_by_block = {
+        "valuation": _PORTFOLIO_VALUATION_MIN_KEYS,
+        "risk": _PORTFOLIO_RISK_MIN_KEYS,
+        "allocation": _PORTFOLIO_ALLOCATION_MIN_KEYS,
+    }
+    for block_name, min_keys in min_keys_by_block.items():
+        for item in blocks[block_name]:
+            if not isinstance(item, dict):
+                return False
+            if any(key not in item for key in min_keys):
+                return False
+
+    return True
+
+
+def _read_portfolio_document() -> dict:
+    """분석 결과 파일을 읽는다. 파일 시스템 접근 단일 지점.
+
+    # @MX:ANCHOR: [AUTO] 요청 경로가 data/ 에 쓰지 않는다(REQ-008)와 파싱·
+    # 스키마 실패 처리(REQ-007)가 이 함수 하나에 걸려 있다.
+    # @MX:REASON: 우회 접근 경로가 생기면 두 요구사항이 동시에 무너진다.
+    """
+    target = DATA_DIR / PORTFOLIO_ANALYSIS_FILE
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="포트폴리오 분석 결과가 없습니다")
+
+    try:
+        with target.open(encoding="utf-8") as data_file:
+            document = json.load(data_file)
+    except (json.JSONDecodeError, OSError):
+        raise HTTPException(status_code=500, detail="포트폴리오 분석 결과를 읽을 수 없습니다")
+
+    if not _is_valid_portfolio_document(document):
+        raise HTTPException(status_code=500, detail="포트폴리오 분석 결과를 읽을 수 없습니다")
+
+    return document
+
+
+@app.get("/api/portfolio")
+def get_portfolio():
+    """REQ-005~REQ-007: 포트폴리오 분석 결과(밸류에이션·리스크·리밸런싱) 서빙.
+
+    # @MX:NOTE: [AUTO] risk.results[]의 actual_weight_pct 를 응답에서 제거하는
+    # 이유 — 분모가 allocation 과 달라 같은 종목에서 다른 값이 나온다(spec.md §1.4).
+    # 화면에는 allocation 쪽 비중 하나만 노출한다(REQ-005).
+    """
+    document = _read_portfolio_document()
+
+    risk_results = [
+        {key: value for key, value in item.items() if key != "actual_weight_pct"}
+        for item in document["risk"]["results"]
+    ]
+
+    return {
+        "meta": {
+            "schema_version": document["schema_version"],
+            "source": document["source"],
+            "portfolio_name": document["portfolio_name"],
+            "as_of": document["as_of"],
+            "generated_date": document["generated_date"],
+        },
+        "valuation": {"results": document["valuation"]["results"]},
+        "risk": {
+            "total_market_value": document["risk"]["total_market_value"],
+            "results": risk_results,
+        },
+        "allocation": {
+            "total_asset": document["allocation"]["total_asset"],
+            "cash": document["allocation"]["cash"],
+            "results": document["allocation"]["results"],
+        },
+    }

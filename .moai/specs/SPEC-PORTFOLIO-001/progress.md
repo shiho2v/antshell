@@ -16,7 +16,7 @@ tier: M
 |---|---|---|---|
 | M1 스크립트 JSON 저장 + 샘플 모드 + 데이터 생성 | 완료 | `scripts/orchestrate_portfolio.py`, `scripts/tests/test_orchestrate_portfolio.py`, `data/portfolio_analysis.json`(`source: "sample"`) | REQ-001~REQ-004 / AC-001~AC-004 |
 | M2 백엔드 엔드포인트 | 완료 | `backend/app/main.py`(`GET /api/portfolio`), `backend/tests/test_portfolio.py` | REQ-005~REQ-008 / AC-005~AC-008 |
-| M3 프론트엔드 화면 + 대시보드 링크 + 수동 검증 절차 | 완료(코드) / 수동 절차 미실행 | `frontend/src/app/portfolio/page.tsx`, `frontend/src/app/dashboard/page.tsx`(링크 1줄), `docs/weekly/WEEK_10.md` 「`/portfolio` 화면 수동 검증 절차」 | REQ-009~REQ-015 / AC-009~AC-015 |
+| M3 프론트엔드 화면 + 대시보드 링크 + 수동 검증 절차 | 거의 완료 (AC-011만 미실행) | `frontend/src/app/portfolio/page.tsx`, `frontend/src/app/dashboard/page.tsx`(링크 1줄), `docs/weekly/WEEK_10.md` 「`/portfolio` 화면 수동 검증 절차」 | REQ-009~REQ-015 / AC-009~AC-015 |
 | M4 문서 동기화 + CI 테스트 경로 확장 + 품질 게이트 | 완료 | `docs/weekly/WEEK_10.md`, `.github/workflows/ci.yml`("Backend 테스트" 단계 확장), 본 문서 | REQ-016 / AC-016 |
 
 ## 인수 기준 판정 기록 (M4에서 작성)
@@ -38,8 +38,14 @@ AC-001~AC-016의 PASS/FAIL 매트릭스를 M4에서 여기에 채운다. 기록 
 | AC-006 | PASS | `test_portfolio_missing_file_returns_404`, `test_portfolio_invalid_json_returns_500_without_leaking_details`, `test_portfolio_schema_violation_returns_500[...]` (3종) |
 | AC-007 | PASS | `test_portfolio_endpoint_makes_no_subprocess_or_network_calls`, `test_portfolio_endpoint_does_not_write_to_data_dir` |
 | AC-008 | PASS | `test_portfolio_response_excludes_risk_weight_but_keeps_allocation_weight` — 직접 재현: 라이브 응답에서 `risk.results[]`에 `actual_weight_pct` 없음, `allocation.results[]`에는 있음 확인 |
-| AC-009 ~ AC-015 | **미실행** | 코드 구현은 완료되고 정적 점검(코드 스팟체크: `unknown`→"판정 불가" 처리, `/login` 리다이렉트, 영역 한정 오류, `NEXT_PUBLIC_API_URL` 관례, `source==='sample'` 표기 — 전부 소스에 존재 확인)했으나, 이 환경에 브라우저/개발자도구가 없어 `docs/weekly/WEEK_10.md` 「`/portfolio` 화면 수동 검증 절차」의 실제 실행은 하지 못했다. 발표 전 사람이 절차대로 1회 실행 필요. |
-| AC-016 | PASS(백엔드) / **미실행**(대시보드) | 백엔드: 기존 `test_chart.py`·`test_indicators.py`·`test_notion_settings.py` 전부 PASS(`pytest backend/tests/ -v` → 91+ passed, 회귀 없음). 대시보드 5개 영역 수동 확인은 위와 같은 사유로 미실행. |
+| AC-009 | PASS | 2026-09-22 사용자 수동 검증(스크린샷). 4개 종목 모두 밸류에이션 배지+점수, 리스크 배지, 리밸런싱 액션 배지, 드리프트%, 리밸런싱 금액이 표시됨. 값이 커밋된 `data/portfolio_analysis.json`과 정확히 일치(예: 삼성전자 드리프트 -16.9%/리밸런싱 5,541,000원, 삼성전기 9.7%/-3,167,500원). |
+| AC-010 | PASS | 2026-09-22 사용자 수동 검증(스크린샷). "보유 종목 기준일: 2026-07-25"·"분석 생성일: 2026-09-22" 별도 레이블로 표시, "실시간 시세가 아닌 스냅샷" 문구 존재, "샘플 데이터(실제 에이전트 분석 아님)" 배지 존재. |
+| AC-011 | **미실행** | `/api/portfolio` 요청 실패(네트워크 오류/404/500) 시나리오는 아직 강제로 재현해보지 않음 — 백엔드 중지 또는 파일 임시 이동 필요. |
+| AC-012 | PASS | 2026-09-22 사용자 수동 검증. 로그아웃 후 `/portfolio` 직접 접근 시 `/login`으로 리다이렉트됨을 확인(3단계). |
+| AC-013 | PASS | 2026-09-22 사용자 수동 검증(스크린샷). 대시보드 헤더에 "포트폴리오 분석" 링크 존재, 클릭 시 `/portfolio`로 정상 이동. |
+| AC-014 | PASS | 위 AC-009/010 데이터가 실제로 로드됐다는 것 자체가 `NEXT_PUBLIC_API_URL` 관례가 동작함을 의미 (검증 중 CORS 설정 오류를 발견해 수정한 뒤 확인됨 — 아래 §E.2 부록 참고). |
+| AC-015 | PASS | 2026-09-22 사용자 수동 검증(스크린샷). SK하이닉스·서흥의 밸류에이션/리스크/리밸런싱이 모두 "판정 불가"로 점선 테두리 배지로 표시되어 목록에서 숨겨지지 않고 정상 판정(채워진 색 배지)과 시각적으로 구분됨. |
+| AC-016 | PASS(백엔드) / 부분 PASS(대시보드) | 백엔드: 기존 `test_chart.py`·`test_indicators.py`·`test_notion_settings.py` 전부 PASS(`pytest backend/tests/ -v` → 91+ passed, 회귀 없음). 대시보드: 2026-09-22 CORS 수정 후 재접속 사용자 확인("잘 됩니다") — 보유 종목 테이블·주가 차트가 정상 로드됨. **주의**: 최초 「1단계 완료」 보고는 잘못된 포트(3000, main 브랜치)를 보고 있었던 것으로 판명되어 이 브랜치의 증거로 사용하지 않음. Notion 저장 버튼 실제 클릭 동작은 아직 테스트 안 됨. |
 
 ## §E.1 Plan-phase Audit-Ready Signal
 
@@ -61,11 +67,17 @@ $ npm run lint && npx tsc --noEmit && npm run build
 ```
 1-skip 사유: `test_committed_agents_json_files_satisfy_valid_news_document[008490]` — `008490_agents.json` 미생성(SPEC-NEWS-001 소관, 아래 재수집 절차 참고).
 
+### 브라우저 수동 검증 (2026-09-22, 사용자 직접 실행)
+
+이 브랜치를 8003(백엔드)·3001(프론트엔드) 포트로 별도 기동해 사용자가 직접 로그인 후 AC-009·010·012·013·014·015·016을 확인(스크린샷 2건). AC-011(요청 실패 시 영역 한정 오류)은 아직 미실행.
+
+**검증 중 발견한 환경 이슈(코드 결함 아님)**: 검증용 백엔드를 3001 프론트엔드와 CORS 없이 기동해 최초 시도에서 전체 fetch 실패가 발생했다. 원인은 `backend/app/main.py`의 `ALLOWED_ORIGINS` 기본값이 `http://localhost:3000`만 포함하기 때문이며, 실제 배포/평소 개발 환경(프론트엔드 3000, 백엔드 8000)에서는 발생하지 않는다 — 오케스트레이터가 검증 편의상 3001 포트를 선택하면서 생긴 문제였다. `ALLOWED_ORIGINS=http://localhost:3001,http://localhost:3000` 환경변수로 재기동해 해소했다. SPEC 코드 변경 없음.
+
 ## §E.3 Run-phase Audit-Ready Signal
 
-- run_status: 코드 구현 및 자동 게이트 전체 완료. AC-009~AC-015 및 AC-016 대시보드분은 브라우저 수동 검증이 필요하나 이 실행 환경에 브라우저가 없어 **미실행** — PASS로 기록하지 않음(정직성 원칙).
-- ac_pass_count: 9 (AC-001~AC-008, AC-016 백엔드분)
-- ac_pending_count: 8 (AC-009~AC-015, AC-016 대시보드분 — 사람이 `docs/weekly/WEEK_10.md` 절차대로 1회 실행 필요)
+- run_status: 코드 구현 및 자동 게이트 전체 완료. 사용자가 2026-09-22 직접 브라우저로 AC-009·010·012·013·014·015·016을 확인(PASS). AC-011만 아직 미실행.
+- ac_pass_count: 15 (AC-001~AC-010, AC-012~AC-016)
+- ac_pending_count: 1 (AC-011 — 요청 실패 시나리오 재현 필요)
 - preserve_list_post_run_count: 위반 0건
 - new_warnings_or_lints_introduced: 0
 

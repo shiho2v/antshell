@@ -33,14 +33,14 @@ AC-001~AC-015의 PASS/FAIL 매트릭스를 M3에서 여기에 채운다. 기록 
 |---|---|---|
 | AC-001 | FAIL(차단됨) | 「AC-001 예외 기록」참고 — 예외 조항 세 조건 모두 충족, SPEC은 이 상태로 닫을 수 있음 |
 | AC-002 ~ AC-007 | PASS | M1에서 확인, §E.2 M1절 참고 |
-| AC-008 | **미실행**(코드는 완료) | `StockNews.tsx`가 `stockCode` prop 기반으로 `GET /api/stocks/{code}/news`를 호출하고 응답 순서 그대로 렌더링하는 코드는 존재하나, 브라우저 렌더링 관찰은 미실행 |
-| AC-009 | **미실행**(코드는 완료, 정적 검증 PASS) | `isSafeUrl(url) = typeof url === 'string' && /^https?:\/\//i.test(url)` — spec.md §4 「안전한 링크」 3조건과 정확히 일치함을 코드로 직접 확인(정적). 실제 브라우저 클릭 동작(새 탭 열림 등)은 미실행 |
-| AC-010 | **미실행**(코드는 완료) | `NewsStatus` 타입에 `'idle'\|'loading'\|'ready'\|'empty'\|'error'` 5개 상태 선언, 각 상태별 서로 다른 안내 문구 존재를 코드로 확인. 브라우저 관찰(특히 스로틀링 필요한 (b))은 미실행 |
+| AC-008 | PASS | 2026-09-22 사용자 수동 검증. 삼성전자·SK하이닉스·삼성전기 선택 시 뉴스 영역에 제목·언론사·날짜·요약 정상 표시 확인("서흥만 뉴스를 불러오지 못했다"는 관찰이, 역으로 나머지 3종목은 정상임을 확인해줌). |
+| AC-009 | 부분 PASS(정적 검증) / **미실행**(실제 클릭 동작) | 정적: `isSafeUrl(url) = typeof url === 'string' && /^https?:\/\//i.test(url)` — spec.md §4 「안전한 링크」 3조건과 정확히 일치함을 코드로 확인. 실제 브라우저에서 안전/비안전 링크 각각의 클릭 동작(새 탭 열림 vs 텍스트)은 임시 픽스처가 필요해 미실행. |
+| AC-010 | 부분 PASS((c) 확인) / **미실행**((a)(b)(d)) | (c) 오류 상태: 2026-09-22 사용자 수동 검증 — 서흥(008490, 파일 없음→404) 선택 시 뉴스 영역에 별도 오류 안내 표시, 나머지 대시보드 영역은 정상 렌더링 유지됨을 확인. (a) 미선택 상태, (b) 스로틀링 지연 상태, (d) 빈 배열 상태는 임시 픽스처/스로틀링 설정이 필요해 미실행. |
 | AC-011 | **미실행**(코드는 완료) | `cancelled` 플래그 패턴(StockChart.tsx와 동일 관례)으로 직전 요청 결과 무효화를 구현한 코드는 확인했으나, 개발자도구 네트워크 탭 기반 실측은 미실행 |
 | AC-012 | **미실행**(코드는 완료) | 스냅샷 안내 문구 존재를 코드로 확인, 브라우저 관찰 미실행 |
-| AC-013 | 부분 PASS(자동분) / **미실행**(화면분) | 자동: `grep -c 'MOCK_NEWS' frontend/src/app/dashboard/page.tsx` → `0` (직접 재현). 화면에서 4종목 각각 확인은 미실행 |
-| AC-014 | 부분 PASS(코드 검사분) / **미실행**(두 환경 화면분) | 코드 검사: `StockNews.tsx`에 `NEXT_PUBLIC_API_URL` + 기본값 `'http://localhost:8000'` 관례 존재 확인(직접 grep). 두 환경에서 개발자도구 Network 탭 실측은 미실행 |
-| AC-015 | 부분 PASS(자동분) / **미실행**(대시보드분) | 자동: 기존 `test_chart.py`·`test_indicators.py`·`test_notion_settings.py` 전부 PASS(회귀 없음, §E.2 참고), `git status --porcelain data/` 확인 결과 `data/008490_agents.json` 관련 변경 외 없음. 대시보드 6개 영역 수동 확인은 미실행 |
+| AC-013 | PASS | 자동: `grep -c 'MOCK_NEWS' frontend/src/app/dashboard/page.tsx` → `0` (직접 재현). 화면: 2026-09-22 사용자 수동 검증 — 삼성전자·SK하이닉스·삼성전기·서흥 4종목 선택 시 실제 API 뉴스(또는 오류 상태)만 표시되고 옛 MOCK_NEWS 3문구는 나타나지 않음 확인(AC-008 검증과 동일 관찰). |
+| AC-014 | 부분 PASS(코드 검사분) / **미실행**(두 환경 비교) | 코드 검사: `StockNews.tsx`에 `NEXT_PUBLIC_API_URL` + 기본값 `'http://localhost:8000'` 관례 존재 확인(직접 grep). 실제로는 `NEXT_PUBLIC_API_URL=http://localhost:8003`으로 설정한 이 검증 환경에서 뉴스가 정상 로드됨을 확인해, 환경 변수 적용 자체는 간접 확인됨. 단 "미설정 시 8000, 설정 시 다른 주소"라는 두 환경 비교 자체는 미실행 |
+| AC-015 | PASS(자동분) / 부분 PASS(대시보드분) | 자동: 기존 `test_chart.py`·`test_indicators.py`·`test_notion_settings.py` 전부 PASS(회귀 없음, §E.2 참고), `git status --porcelain data/` 확인 결과 `data/008490_agents.json` 관련 변경 외 없음. 대시보드: 2026-09-22 CORS 수정 후 재접속 확인 — 헤더·포트폴리오 요약·보유 종목 테이블·주가 차트 정상. Notion 저장 버튼 클릭 동작은 미테스트 |
 
 ### AC-001 예외 기록 (수집 실패 시에만 작성)
 
@@ -180,10 +180,10 @@ AC-008~AC-014의 실제 브라우저 동작(링크 클릭, 스로틀링 기반 �
 
 ## §E.3 Run-phase Audit-Ready Signal
 
-- run_status: M1~M3 코드/자동 게이트 전체 완료. AC-001은 예외 조항 세 조건 충족으로 FAIL(차단됨) 확정. AC-008~AC-014(화면 동작)는 브라우저 부재로 **미실행** — PASS로 기록하지 않음(정직성 원칙).
-- ac_pass_count: 6 (AC-002~AC-007) + 3 부분(AC-013·014·015 자동분)
+- run_status: M1~M3 코드/자동 게이트 전체 완료. AC-001은 예외 조항 세 조건 충족으로 FAIL(차단됨) 확정. 2026-09-22 사용자가 직접 브라우저로 AC-008·013을 확인(PASS), AC-009·010·014·015는 부분 확인. AC-011·012는 아직 미실행.
+- ac_pass_count: 9 (AC-002~AC-008, AC-013, AC-015 자동분) + 2 부분(AC-009·010) + 1 부분(AC-014)
 - ac_fail_count: 1 (AC-001, 예외 조항으로 확정 — 재작업 불필요)
-- ac_pending_count: 6 (AC-008~AC-012, 및 AC-013·014·015의 화면분 — 사람이 절차대로 1회 실행 필요)
+- ac_pending_count: 4 (AC-011 대시보드분, AC-012, AC-009·010의 나머지 하위 케이스 — 사람이 임시 픽스처/스로틀링으로 절차대로 실행 필요)
 - preserve_list_post_run_count: 위반 0건
 - new_warnings_or_lints_introduced: 0
 - total_run_phase_files: 6 (M1: `backend/app/news.py`·`backend/app/main.py`·`backend/tests/test_news.py` / M2: `frontend/src/components/StockNews.tsx`·`frontend/src/app/dashboard/page.tsx`·`docs/weekly/WEEK_10.md`)

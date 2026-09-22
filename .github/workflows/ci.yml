@@ -39,7 +39,7 @@ jobs:
         run: npm run lint
 
       - name: Backend 테스트
-        run: pytest backend/tests/ -v
+        run: pytest backend/tests/ scripts/tests/ -v
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 

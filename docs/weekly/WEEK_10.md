@@ -1,14 +1,14 @@
 # WEEK_10 — 10주차 작업 계획
 
-**날짜:** 2025-09-07 | **발표자:** A | **챕터:** Ch.09 (2/2) | **난이도:** 고급
+**날짜:** 2026-09-20 | **발표자:** 정우준 | **챕터:** Ch.09 (2/2) | **난이도:** 고급
 
 ## 이번 주 목표
 에이전트 팀 병렬 개발·스킬 생태계·빌더 에이전트
 
 ## 발표자 작업 목록
-- [ ] 담당 챕터 정독 및 핵심 개념 3가지 정리
+- [x] 담당 챕터 정독 및 핵심 개념 3가지 정리
 - [ ] 주식 웹 적용 기능 개발 (아래 참고)
-- [ ] feat/A-week10 브랜치 생성 후 PR 오픈
+- [ ] `feature/10-정우준-portfolio-news` 브랜치 생성 후 PR 오픈
 - [ ] Notion 발표 페이지 초안 작성 (D-1까지)
 
 ## 주식 웹 적용
@@ -26,7 +26,7 @@
 없음
 
 ## 다음 주 예고
-발표자: **B** | 챕터: Ch.10
+발표자: **주경희** | 챕터: Ch.10
 
 ## `/portfolio` 화면 수동 검증 절차
 
@@ -79,6 +79,24 @@ SPEC-PORTFOLIO-001 M3 산출물. 이 저장소에는 프론트엔드 테스트 �
 2. **실행**: `/dashboard` 접속.
 3. **관찰 대상**: 보유 종목 테이블, 주가 차트, 최신 뉴스, GitHub 이슈, Notion 저장 버튼.
 4. **PASS 조건**: 다섯 영역 모두 이전과 동일하게 정상 동작하면 PASS (백엔드 회귀는 `pytest backend/tests/ -v`로 별도 확인).
+
+## 포트폴리오 모듈 요약 및 재생성 절차 (SPEC-PORTFOLIO-001 M4)
+
+### 모듈 요약
+
+`scripts/orchestrate_portfolio.py`가 보유 종목(`data/portfolio.example.json`)을 3개 서브에이전트(밸류에이션·리스크·리밸런싱)로 분석해 `data/portfolio_analysis.json`에 저장하고, 백엔드 `GET /api/portfolio`가 이 파일을 읽어 서빙하며, `/portfolio` 화면이 종목별 판정을 표시한다. 현재 커밋된 `data/portfolio_analysis.json`은 `--sample` 모드로 생성됐다(`source: "sample"`) — 실제 에이전트 팀 분석(`source: "agent-team"`)은 아직 실행되지 않았다.
+
+### 재생성 절차
+
+1. 실제 분석: `python scripts/orchestrate_portfolio.py --portfolio data/portfolio.example.json --save-json data/portfolio_analysis.json` (3개 서브에이전트를 `claude -p`로 순차/병렬 호출, Claude 사용량 소모, 서브에이전트당 최대 240초).
+   샘플(결정론적, 에이전트 미호출): `python scripts/orchestrate_portfolio.py --portfolio data/portfolio.example.json --sample --save-json data/portfolio_analysis.json`
+2. 저장된 파일이 spec.md §4 「필수 키 집합」 다섯 조건을 만족하는지 확인한다(스크립트가 저장 전에 자체 검사하므로, 종료 코드가 0이면 이미 만족된 것이다).
+3. 저장소에 커밋한다.
+4. 실행일(`generated_date`)과 보유 종목 기준일(`as_of`)은 서로 다를 수 있다 — 화면에 둘 다 표시된다(REQ-010).
+
+### CI 확장
+
+`.github/workflows/ci.yml`의 "Backend 테스트" 단계를 `pytest backend/tests/ -v`에서 `pytest backend/tests/ scripts/tests/ -v`로 확장했다(2026-09-22). 로컬에서 두 스위트가 함께 통과함을 사전 확인했다(114 passed, 1 skipped — skip은 `008490_agents.json` 미생성에 따른 예상된 스킵).
 
 ## 대시보드 뉴스 영역 수동 검증 절차 (SPEC-NEWS-001 M2)
 
@@ -156,3 +174,18 @@ AC-008 ④·AC-009·AC-010 (d)는 커밋된 `data/*_agents.json`만으로 재현
 ### 실행 결과 기록
 
 수동 절차 실행 1회의 AC별 PASS/FAIL 결과는 `.moai/specs/SPEC-NEWS-001/progress.md`의 매트릭스에 위 PASS 조건을 인용해 기록한다. 절차 인용 없이 "확인함"만 적은 항목은 PASS로 보지 않는다(`acceptance.md` 품질 게이트).
+
+## 뉴스 모듈 요약 및 재수집 절차 (SPEC-NEWS-001 M3)
+
+### 모듈 요약
+
+`GET /api/stocks/{code}/news`가 `data/{code}_agents.json`의 `news` 배열을 읽어 정렬·전달하고, 대시보드의 `StockNews` 컴포넌트가 보유 종목 선택에 맞춰 이를 표시한다. 4개 허용 종목(`005930`·`000660`·`009150`·`008490`) 중 `008490`은 아직 뉴스 파일이 없어 `404`를 반환한다(아래 재수집 절차 참고). 데이터는 사전 수집된 스냅샷이며 요청 경로에서 실시간으로 수집하지 않는다.
+
+### 재수집 절차 (`008490` 또는 다른 종목 갱신 시)
+
+1. `python scripts/orchestrate_stock_agents.py <티커> --save` 를 1회 실행한다 (`claude -p` 서브에이전트 호출, Claude 사용량 소모, 최대 180초).
+2. 생성된 `data/<티커>_agents.json`이 spec.md §4 「유효한 뉴스 문서」 네 조건(JSON 객체 파싱 가능 / `news` 키가 리스트 / 모든 원소가 객체 / 모든 원소가 `title`·`date`·`source`·`summary` 네 문자열 키 보유)을 만족하는지 확인한다.
+3. `git diff --stat scripts/` 로 수집 스크립트 자체가 변경되지 않았는지 확인한다(REQ-001 — 스크립트는 이 SPEC에서 수정하지 않는다).
+4. 저장소에 커밋한다.
+
+**2026-09-22 실행 기록**: `008490`에 대해 위 1단계를 1회 실행했으나 실패했다 — `claude -p` 서브프로세스 자체는 종료 코드 0으로 끝났지만, 반환된 봉투(envelope)의 `result` 필드가 JSON으로 재파싱되지 않았다(`json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)`). 재시도는 하지 않았다(외부 부작용 호출의 근거 없는 반복 실행을 피함). `data/008490_agents.json`은 여전히 존재하지 않으며, `GET /api/stocks/008490/news`는 `404`를 반환한다(AC-004 확인됨) — 이 상태는 정상 경로로 설계되어 있다(§4 엣지 케이스). 재시도는 이 SPEC 범위 밖의 후속 작업으로 남긴다.

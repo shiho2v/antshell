@@ -148,7 +148,7 @@ FAILED backend/tests/test_news.py::test_news_endpoint_makes_no_subprocess_or_net
 - preserve_list_post_run_count: 위반 0건 — `plan.md` §A.6 PRESERVE 목록 중 `backend/app/main.py` 기존 라우트 본문·차트 구간 미수정(추가만), `backend/requirements.txt`·`test_chart.py`·`test_indicators.py`·`test_notion_settings.py`·`conftest.py`·`.github/workflows/ci.yml`·`scripts/`·`data/` 기존 파일 전체 미변경
 - new_warnings_or_lints_introduced: 0 (`ruff check backend/` → All checks passed)
 - total_run_phase_files: 3 (`backend/app/news.py` 신규, `backend/app/main.py` 수정, `backend/tests/test_news.py` 신규)
-- m1_commit_sha: pending-backfill-M1 (이 섹션을 쓰는 커밋이 자신의 SHA를 알 수 없으므로 다음 커밋에서 backfill)
+- m1_commit_sha: 4f317b6
 
 ## §E.4 Sync-phase Audit-Ready Signal
 

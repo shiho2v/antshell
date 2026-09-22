@@ -16,7 +16,7 @@ import httpx
 
 # config 를 가장 먼저 import 해야 한다. 모듈 본문에서 루트 .env 를 os.environ 에
 # 채우므로, 아래 os.getenv 호출과 auth 모듈이 그 값을 볼 수 있다.
-from app import auth, config, indicators
+from app import auth, config, indicators, news
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -352,3 +352,26 @@ def get_stock_indicators(code: str):
     for period in EMA_PERIODS:
         response[f"ema_{period}"] = indicators.exponential_moving_average(closing_prices, period)
     return response
+
+
+# =============================================================
+# SPEC-NEWS-001 — 종목 뉴스 모듈 (Week 10 / @정우준)
+#
+# 뉴스 문서 읽기·검증·정렬은 app/news.py 로 분리했다 — 파일이 늘어날 이
+# 구간에 로직을 더 얹지 않기 위함이다 (plan.md §A.2 결정 3).
+# =============================================================
+
+
+@app.get("/api/stocks/{code}/news")
+def get_stock_news(code: str):
+    """REQ-002~REQ-007: 종목 뉴스 서빙.
+
+    # @MX:ANCHOR: [AUTO] 허용 목록 검사를 파일 접근(news.build_news_response)
+    # 보다 먼저 수행한다(REQ-005). data/005380_agents.json 이 허용 목록 밖
+    # 코드로 실제 존재하므로, 순서가 뒤집히면 그 파일이 바로 노출된다.
+    # @MX:REASON: _load_ohlcv_or_404 와 같은 순서를 지키지 않으면 AC-005의
+    # "파일 열기가 한 번도 호출되지 않았음" 단언이 깨진다.
+    """
+    if code not in news.NEWS_STOCK_CODES:
+        raise HTTPException(status_code=404, detail="지원하지 않는 종목 코드입니다")
+    return news.build_news_response(DATA_DIR, code)

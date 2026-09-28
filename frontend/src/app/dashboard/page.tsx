@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import StockChart from '@/components/StockChart'
+import StockNews from '@/components/StockNews'
 import type { User } from '@supabase/supabase-js'
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
@@ -20,12 +21,6 @@ const MOCK_STOCKS = [
   { code: '000660', name: 'SK하이닉스', price: '198,000', change: '-0.5%', up: false },
   { code: '009150', name: '삼성전기', price: '142,000', change: '+2.1%', up: true },
   { code: '008490', name: '서흥', price: '28,350', change: '-1.3%', up: false },
-]
-
-const MOCK_NEWS = [
-  { title: '삼성전자, 3분기 영업이익 10조 돌파 전망', time: '10분 전' },
-  { title: 'SK하이닉스 HBM4 양산 일정 앞당겨', time: '32분 전' },
-  { title: '코스피, 외국인 순매수에 2,650선 회복', time: '1시간 전' },
 ]
 
 type GithubIssue = {
@@ -114,6 +109,12 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-bold">불타는 개미지옥</h1>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-400">{user.email}</span>
+          <Link
+            href="/portfolio"
+            className="rounded-lg bg-gray-800 px-4 py-1.5 text-sm hover:bg-gray-700"
+          >
+            포트폴리오 분석
+          </Link>
           <Link
             href="/settings"
             className="rounded-lg bg-gray-800 px-4 py-1.5 text-sm hover:bg-gray-700"
@@ -216,17 +217,9 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* 최신 뉴스 */}
-        <div className="col-span-3 rounded-2xl bg-gray-900 p-6">
-          <h2 className="mb-4 text-lg font-semibold">최신 뉴스</h2>
-          <ul className="divide-y divide-gray-800">
-            {MOCK_NEWS.map((n, i) => (
-              <li key={i} className="flex items-center justify-between py-3">
-                <span className="text-sm">{n.title}</span>
-                <span className="ml-4 shrink-0 text-xs text-gray-500">{n.time}</span>
-              </li>
-            ))}
-          </ul>
+        {/* 최신 뉴스 (SPEC-NEWS-001) */}
+        <div className="col-span-3">
+          <StockNews stockCode={selectedStock?.code} />
         </div>
 
         {/* GitHub 이슈 */}

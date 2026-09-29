@@ -24,9 +24,9 @@
 
 ## 현재 진행 주차
 <!-- 매주 발표자가 업데이트 -->
-CURRENT_WEEK=09
-CURRENT_PRESENTER=어지수
-CURRENT_CHAPTER=Ch.09 (1/2)
+CURRENT_WEEK=10
+CURRENT_PRESENTER=정우준
+CURRENT_CHAPTER=Ch.09 (2/2)
 
 ## 새로운 팀원이라면
 `docs/setup/ONBOARDING.md` 를 먼저 읽으세요.
